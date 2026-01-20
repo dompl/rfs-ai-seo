@@ -14,6 +14,33 @@ if (!defined('ABSPATH')) {
 <div class="wrap rfs-ai-seo-stats-page">
 	<h1><?php esc_html_e('Usage Statistics', 'rfs-ai-seo'); ?></h1>
 
+	<?php
+	// Check spending cap status.
+	$cap_status = $logger->check_spending_cap();
+	if ($cap_status['cap'] > 0) :
+		$percentage = ($cap_status['current_cost'] / $cap_status['cap']) * 100;
+		$bar_class = $percentage >= 100 ? 'danger' : ($percentage >= 80 ? 'warning' : 'success');
+		?>
+		<!-- Spending Cap Notice -->
+		<div class="notice notice-<?php echo $percentage >= 100 ? 'error' : ($percentage >= 80 ? 'warning' : 'info'); ?> inline">
+			<p>
+				<strong><?php esc_html_e('Monthly Spending Cap:', 'rfs-ai-seo'); ?></strong>
+				<?php
+				printf(
+					/* translators: 1: Current spending, 2: Cap limit, 3: Remaining */
+					esc_html__('$%.2f of $%.2f used this month ($%.2f remaining)', 'rfs-ai-seo'),
+					$cap_status['current_cost'],
+					$cap_status['cap'],
+					$cap_status['remaining']
+				);
+				?>
+			</p>
+			<div class="rfs-spending-bar">
+				<div class="rfs-spending-bar-fill <?php echo esc_attr($bar_class); ?>" style="width: <?php echo min(100, $percentage); ?>%"></div>
+			</div>
+		</div>
+	<?php endif; ?>
+
 	<!-- Summary Cards -->
 	<div class="rfs-ai-seo-stats-cards">
 		<div class="rfs-ai-seo-stat-card">

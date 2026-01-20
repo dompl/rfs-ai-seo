@@ -89,6 +89,17 @@ class Generator {
 	 * @return array|\WP_Error Generated meta or error.
 	 */
 	public function generate_single(int $object_id, string $object_type): array|\WP_Error {
+		// Check spending cap.
+		$logger = new Usage_Logger();
+		$cap_status = $logger->check_spending_cap();
+
+		if (!$cap_status['allowed']) {
+			return new \WP_Error(
+				'spending_cap_reached',
+				$cap_status['message']
+			);
+		}
+
 		// Collect content data.
 		$data = $this->collect_content_data($object_id, $object_type);
 
@@ -137,8 +148,7 @@ class Generator {
 		$yoast = new Yoast_Integration();
 		$current_meta = $yoast->get_meta($object_id, $object_type);
 
-		// Log generation.
-		$logger = new Usage_Logger();
+		// Log generation (reuse logger instance from cap check).
 		$logger->log($object_id, $object_type, [
 			'tokens_prompt' => $result['tokens']['prompt'],
 			'tokens_completion' => $result['tokens']['completion'],

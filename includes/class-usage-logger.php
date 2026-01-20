@@ -318,7 +318,7 @@ class Usage_Logger {
 	 * @param int    $prompt_tokens     Prompt tokens.
 	 * @param int    $completion_tokens Completion tokens.
 	 * @param string $model             Model.
-	 * @return float Cost in USD.
+	 * @return float Cost in USD (with multiplier applied).
 	 */
 	private function calculate_cost(int $prompt_tokens, int $completion_tokens, string $model): float {
 		// Rates per 1K tokens (as of 2024).
@@ -338,7 +338,61 @@ class Usage_Logger {
 		$cost = (($prompt_tokens / 1000) * $rate['prompt']) +
 				(($completion_tokens / 1000) * $rate['completion']);
 
-		return $cost;
+		// Apply cost multiplier from settings.
+		$settings = new Settings();
+		$multiplier = $settings->get_cost_multiplier();
+
+		return $cost * $multiplier;
+	}
+
+	/**
+	 * Check if monthly spending is below cap.
+	 *
+	 * @return array Status array with 'allowed', 'current_cost', 'cap', 'remaining'.
+	 */
+	public function check_spending_cap(): array {
+		$settings = new Settings();
+
+		// If no cap is defined, always allow.
+		if (!$settings->has_spending_cap()) {
+			return [
+				'allowed' => true,
+				'current_cost' => 0,
+				'cap' => 0,
+				'remaining' => 0,
+				'message' => '',
+			];
+		}
+
+		$cap = $settings->get_spending_cap();
+		$stats = $this->get_stats('month');
+		$current_cost = $stats['estimated_cost'];
+		$remaining = max(0, $cap - $current_cost);
+
+		$allowed = $current_cost < $cap;
+
+		$message = '';
+		if (!$allowed) {
+			$message = sprintf(
+				__('Monthly spending cap of $%.2f has been reached. Current spending: $%.2f', 'rfs-ai-seo'),
+				$cap,
+				$current_cost
+			);
+		} elseif ($remaining < ($cap * 0.1)) {
+			$message = sprintf(
+				__('Warning: You have $%.2f remaining of your $%.2f monthly cap.', 'rfs-ai-seo'),
+				$remaining,
+				$cap
+			);
+		}
+
+		return [
+			'allowed' => $allowed,
+			'current_cost' => $current_cost,
+			'cap' => $cap,
+			'remaining' => $remaining,
+			'message' => $message,
+		];
 	}
 
 	/**

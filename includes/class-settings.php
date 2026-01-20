@@ -315,4 +315,39 @@ class Settings {
 
 		return is_array($fields) ? $fields : [];
 	}
+
+	/**
+	 * Get cost multiplier from wp-config.
+	 *
+	 * @return float Cost multiplier (default: 100).
+	 */
+	public function get_cost_multiplier(): float {
+		if (defined('RFS_AI_SEO_MULTIPLYER') && RFS_AI_SEO_MULTIPLYER > 0) {
+			return (float) RFS_AI_SEO_MULTIPLYER;
+		}
+
+		return 100.0;
+	}
+
+	/**
+	 * Get monthly spending cap from wp-config.
+	 *
+	 * @return float Spending cap in dollars (default: 10).
+	 */
+	public function get_spending_cap(): float {
+		if (defined('RFS_AI_SEO_CAP') && RFS_AI_SEO_CAP > 0) {
+			return (float) RFS_AI_SEO_CAP;
+		}
+
+		return 10.0;
+	}
+
+	/**
+	 * Check if spending cap is defined.
+	 *
+	 * @return bool True if cap is defined.
+	 */
+	public function has_spending_cap(): bool {
+		return defined('RFS_AI_SEO_CAP') && RFS_AI_SEO_CAP > 0;
+	}
 }

@@ -26,29 +26,40 @@
 
 /* Meta Box Styles */
 .rfs-ai-seo-meta-box {
-	padding: 10px;
+	padding: 12px 16px;
 }
 
 .rfs-ai-seo-current-meta {
-	margin-bottom: 15px;
+	margin-bottom: 16px;
+	background: #f6f7f7;
+	padding: 12px;
+	border-radius: 4px;
+	border-left: 3px solid #2271b1;
 }
 
 .rfs-ai-seo-current-meta p {
-	margin: 8px 0;
+	margin: 6px 0;
+}
+
+.rfs-ai-seo-current-meta p:last-child {
+	margin-bottom: 0;
 }
 
 .rfs-ai-seo-current-meta .label {
 	font-weight: 600;
 	color: #1d2327;
-	font-size: 13px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
 }
 
 .rfs-ai-seo-current-meta .value {
 	color: #50575e;
 	font-size: 13px;
 	display: block;
-	margin-top: 5px;
+	margin-top: 4px;
 	word-wrap: break-word;
+	line-height: 1.5;
 }
 
 .rfs-ai-seo-current-meta .value.not-set {
@@ -58,16 +69,19 @@
 
 .rfs-ai-seo-generate-btn {
 	text-align: center;
-	margin: 15px 0;
+	margin: 0 0 16px 0;
 }
 
 .rfs-ai-seo-generate-btn .button-large {
 	width: 100%;
+	height: 40px;
+	font-size: 14px;
+	font-weight: 500;
 }
 
 .rfs-ai-seo-generate-btn .spinner {
 	float: none;
-	margin: 10px auto 0;
+	margin: 8px auto 0;
 	display: block;
 }
 
@@ -78,18 +92,39 @@
 /* Preview Panel */
 .rfs-ai-seo-preview {
 	display: none;
-	border-top: 1px solid #c3c4c7;
-	padding-top: 15px;
-	margin-top: 15px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px;
+	margin-top: 16px;
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .rfs-ai-seo-preview.active {
 	display: block;
+	animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 .rfs-ai-seo-preview h4 {
-	margin: 0 0 15px 0;
-	font-size: 14px;
+	margin: 0 0 16px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #2271b1;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	border-bottom: 2px solid #f0f0f1;
+	padding-bottom: 8px;
 }
 
 .rfs-ai-seo-field {
@@ -161,24 +196,33 @@
 
 /* Action Buttons */
 .rfs-ai-seo-actions {
-	display: flex;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
 	gap: 8px;
 	margin-top: 15px;
-	flex-wrap: wrap;
 }
 
 .rfs-ai-seo-actions .button {
-	flex: 1;
-	min-width: 0;
+	padding: 6px 12px;
+	height: auto;
+	font-size: 13px;
+	text-align: center;
+}
+
+.rfs-ai-seo-actions .button-primary {
+	grid-column: 1 / -1;
+	font-weight: 500;
 }
 
 .rfs-ai-seo-actions .spinner {
 	float: none;
 	margin: 0;
+	grid-column: 1 / -1;
+	justify-self: center;
 }
 
 .rfs-ai-seo-actions .spinner.is-active {
-	display: inline-block;
+	display: block;
 }
 
 .rfs-ai-seo-token-info {
@@ -220,4 +264,30 @@
 
 .notice.inline p {
 	margin: 0.5em 0;
+}
+
+/* Spending Bar */
+.rfs-spending-bar {
+	height: 8px;
+	background: #f0f0f1;
+	border-radius: 4px;
+	overflow: hidden;
+	margin-top: 8px;
+}
+
+.rfs-spending-bar-fill {
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.rfs-spending-bar-fill.success {
+	background: #00a32a;
+}
+
+.rfs-spending-bar-fill.warning {
+	background: #dba617;
+}
+
+.rfs-spending-bar-fill.danger {
+	background: #d63638;
 }

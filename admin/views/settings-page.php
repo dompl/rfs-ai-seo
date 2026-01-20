@@ -25,6 +25,35 @@ $prompt_category = $settings->get_prompt('category');
 <div class="wrap">
 	<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
+	<!-- Plugin Description -->
+	<div class="rfs-ai-seo-plugin-header" style="background: linear-gradient(135deg, #2271b1 0%, #135e96 100%); color: #fff; padding: 24px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+		<div style="display: flex; align-items: center; gap: 20px;">
+			<div style="font-size: 48px;">🚀</div>
+			<div style="flex: 1;">
+				<h2 style="margin: 0 0 8px 0; color: #fff; font-size: 20px; font-weight: 600;">
+					<?php esc_html_e('AI-Powered SEO Meta Generation', 'rfs-ai-seo'); ?>
+				</h2>
+				<p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.6; opacity: 0.95;">
+					<?php esc_html_e('Automatically generate compelling SEO meta titles and descriptions for your WooCommerce products and categories using OpenAI. Save time and improve your search engine rankings with AI-powered content optimization.', 'rfs-ai-seo'); ?>
+				</p>
+				<div style="display: flex; gap: 20px; font-size: 12px; opacity: 0.9;">
+					<div>
+						<strong><?php esc_html_e('Developed by:', 'rfs-ai-seo'); ?></strong>
+						<a href="https://redfrogstudio.co.uk" target="_blank" style="color: #fff; text-decoration: underline;">Red Frog Studio</a>
+					</div>
+					<div>
+						<strong><?php esc_html_e('License:', 'rfs-ai-seo'); ?></strong>
+						<?php esc_html_e('Proprietary - Licensed to Red Frog Studio', 'rfs-ai-seo'); ?>
+					</div>
+					<div>
+						<strong><?php esc_html_e('Version:', 'rfs-ai-seo'); ?></strong>
+						<?php echo esc_html(RFS_AI_SEO_VERSION); ?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<h2 class="nav-tab-wrapper">
 		<a href="?page=rfs-ai-seo&tab=api" class="nav-tab <?php echo $active_tab === 'api' ? 'nav-tab-active' : ''; ?>">
 			<?php esc_html_e('API Settings', 'rfs-ai-seo'); ?>
@@ -115,6 +144,40 @@ $prompt_category = $settings->get_prompt('category');
 						</button>
 						<span class="spinner" id="rfs_ai_seo_test_spinner" style="float: none; margin: 0 10px;"></span>
 						<div id="rfs_ai_seo_test_result" style="margin-top: 10px;"></div>
+					</td>
+				</tr>
+				<?php
+				// Display cost multiplier and cap info.
+				$cost_multiplier = $settings->get_cost_multiplier();
+				$spending_cap = $settings->get_spending_cap();
+				$has_cap = $settings->has_spending_cap();
+				?>
+				<tr>
+					<th scope="row">
+						<?php esc_html_e('Cost Settings', 'rfs-ai-seo'); ?>
+					</th>
+					<td>
+						<p style="margin: 0 0 8px 0;">
+							<strong><?php esc_html_e('Cost Multiplier:', 'rfs-ai-seo'); ?></strong> <?php echo esc_html($cost_multiplier); ?>x<br>
+							<span class="description">
+								<?php esc_html_e('All displayed costs are multiplied by this factor. Configured in wp-config.php via RFS_AI_SEO_MULTIPLYER constant.', 'rfs-ai-seo'); ?>
+							</span>
+						</p>
+						<?php if ($has_cap) : ?>
+							<p style="margin: 8px 0 0 0;">
+								<strong><?php esc_html_e('Monthly Spending Cap:', 'rfs-ai-seo'); ?></strong> $<?php echo esc_html(number_format($spending_cap, 2)); ?><br>
+								<span class="description">
+									<?php esc_html_e('Maximum allowed spending per month. Configured in wp-config.php via RFS_AI_SEO_CAP constant.', 'rfs-ai-seo'); ?>
+								</span>
+							</p>
+						<?php else : ?>
+							<p style="margin: 8px 0 0 0;">
+								<strong><?php esc_html_e('Monthly Spending Cap:', 'rfs-ai-seo'); ?></strong> <?php esc_html_e('Not set', 'rfs-ai-seo'); ?><br>
+								<span class="description">
+									<?php esc_html_e('To set a spending cap, define RFS_AI_SEO_CAP in wp-config.php', 'rfs-ai-seo'); ?>
+								</span>
+							</p>
+						<?php endif; ?>
 					</td>
 				</tr>
 			</table>
