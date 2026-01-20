@@ -1,0 +1,223 @@
+/**
+ * RFS AI SEO Admin Styles
+ *
+ * @package RFS_AI_SEO
+ */
+
+/* ACF Fields Repeater */
+.rfs-ai-seo-acf-fields {
+	margin-bottom: 15px;
+}
+
+.rfs-ai-seo-acf-field-row {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 8px;
+	align-items: center;
+}
+
+.rfs-ai-seo-acf-field-row input {
+	flex: 1;
+}
+
+.rfs-ai-seo-add-field {
+	margin-top: 5px;
+}
+
+/* Meta Box Styles */
+.rfs-ai-seo-meta-box {
+	padding: 10px;
+}
+
+.rfs-ai-seo-current-meta {
+	margin-bottom: 15px;
+}
+
+.rfs-ai-seo-current-meta p {
+	margin: 8px 0;
+}
+
+.rfs-ai-seo-current-meta .label {
+	font-weight: 600;
+	color: #1d2327;
+	font-size: 13px;
+}
+
+.rfs-ai-seo-current-meta .value {
+	color: #50575e;
+	font-size: 13px;
+	display: block;
+	margin-top: 5px;
+	word-wrap: break-word;
+}
+
+.rfs-ai-seo-current-meta .value.not-set {
+	color: #a7aaad;
+	font-style: italic;
+}
+
+.rfs-ai-seo-generate-btn {
+	text-align: center;
+	margin: 15px 0;
+}
+
+.rfs-ai-seo-generate-btn .button-large {
+	width: 100%;
+}
+
+.rfs-ai-seo-generate-btn .spinner {
+	float: none;
+	margin: 10px auto 0;
+	display: block;
+}
+
+.rfs-ai-seo-generate-btn .spinner.is-active {
+	display: block;
+}
+
+/* Preview Panel */
+.rfs-ai-seo-preview {
+	display: none;
+	border-top: 1px solid #c3c4c7;
+	padding-top: 15px;
+	margin-top: 15px;
+}
+
+.rfs-ai-seo-preview.active {
+	display: block;
+}
+
+.rfs-ai-seo-preview h4 {
+	margin: 0 0 15px 0;
+	font-size: 14px;
+}
+
+.rfs-ai-seo-field {
+	margin-bottom: 15px;
+}
+
+.rfs-ai-seo-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 5px;
+	font-size: 12px;
+}
+
+.rfs-ai-seo-field input[type="text"],
+.rfs-ai-seo-field textarea {
+	width: 100%;
+	font-size: 13px;
+}
+
+.rfs-ai-seo-field textarea {
+	min-height: 80px;
+	resize: vertical;
+}
+
+/* Character Counter */
+.rfs-ai-seo-char-counter {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	margin-bottom: 5px;
+	font-size: 11px;
+}
+
+.rfs-ai-seo-char-counter .count {
+	margin-right: 8px;
+	font-weight: 600;
+}
+
+.rfs-ai-seo-char-counter .bar {
+	width: 40px;
+	height: 3px;
+	border-radius: 2px;
+	background: #c3c4c7;
+}
+
+.rfs-ai-seo-char-counter.green .count {
+	color: #00a32a;
+}
+
+.rfs-ai-seo-char-counter.green .bar {
+	background: #00a32a;
+}
+
+.rfs-ai-seo-char-counter.yellow .count {
+	color: #dba617;
+}
+
+.rfs-ai-seo-char-counter.yellow .bar {
+	background: #dba617;
+}
+
+.rfs-ai-seo-char-counter.red .count {
+	color: #d63638;
+}
+
+.rfs-ai-seo-char-counter.red .bar {
+	background: #d63638;
+}
+
+/* Action Buttons */
+.rfs-ai-seo-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 15px;
+	flex-wrap: wrap;
+}
+
+.rfs-ai-seo-actions .button {
+	flex: 1;
+	min-width: 0;
+}
+
+.rfs-ai-seo-actions .spinner {
+	float: none;
+	margin: 0;
+}
+
+.rfs-ai-seo-actions .spinner.is-active {
+	display: inline-block;
+}
+
+.rfs-ai-seo-token-info {
+	margin: 10px 0 0 0 !important;
+	font-size: 11px !important;
+	color: #666 !important;
+}
+
+/* Bulk Generator Styles (to be expanded in Phase 6) */
+.rfs-ai-seo-bulk-filters {
+	display: flex;
+	gap: 10px;
+	align-items: flex-end;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+}
+
+/* Settings Tabs */
+.nav-tab-wrapper {
+	margin-bottom: 20px;
+}
+
+/* Admin notices */
+.rfs-ai-seo-notice {
+	margin: 15px 0;
+}
+
+.rfs-ai-seo-notice p {
+	margin: 0.5em 0;
+	padding: 2px;
+}
+
+/* Inline notices for test connection */
+.notice.inline {
+	display: inline-block;
+	margin: 0;
+	padding: 5px 12px;
+}
+
+.notice.inline p {
+	margin: 0.5em 0;
+}
