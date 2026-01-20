@@ -110,7 +110,7 @@ if (!defined('ABSPATH')) {
 	</div>
 
 	<!-- Progress Panel (hidden by default) -->
-	<div class="rfs-ai-seo-progress" id="rfs_bulk_progress">
+	<div class="rfs-ai-seo-progress" id="rfs_bulk_progress" style="display: none;">
 		<div class="rfs-progress-header">
 			<div style="display: flex; align-items: center; gap: 12px;">
 				<span class="spinner is-active" style="float: none; margin: 0;"></span>
@@ -139,21 +139,21 @@ if (!defined('ABSPATH')) {
 
 		<div class="rfs-ai-seo-progress-stats">
 			<div class="rfs-stat-card success">
-				<div class="rfs-stat-icon">✓</div>
+				<div class="rfs-stat-icon">&#10003;</div>
 				<div class="rfs-stat-content">
 					<div class="rfs-stat-value" id="rfs_progress_success">0</div>
 					<div class="rfs-stat-label"><?php esc_html_e('Success', 'rfs-ai-seo'); ?></div>
 				</div>
 			</div>
 			<div class="rfs-stat-card error">
-				<div class="rfs-stat-icon">✗</div>
+				<div class="rfs-stat-icon">&#10005;</div>
 				<div class="rfs-stat-content">
 					<div class="rfs-stat-value" id="rfs_progress_failed">0</div>
 					<div class="rfs-stat-label"><?php esc_html_e('Failed', 'rfs-ai-seo'); ?></div>
 				</div>
 			</div>
 			<div class="rfs-stat-card info">
-				<div class="rfs-stat-icon">🎯</div>
+				<div class="rfs-stat-icon">&#9873;</div>
 				<div class="rfs-stat-content">
 					<div class="rfs-stat-value" id="rfs_progress_tokens">0</div>
 					<div class="rfs-stat-label"><?php esc_html_e('Tokens', 'rfs-ai-seo'); ?></div>

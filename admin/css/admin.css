@@ -327,7 +327,7 @@
 
 /* Progress Panel Improvements */
 .rfs-ai-seo-progress {
-	display: none;
+	display: none !important;
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	border-radius: 8px;
@@ -337,7 +337,7 @@
 }
 
 .rfs-ai-seo-progress.active {
-	display: block;
+	display: block !important;
 }
 
 .rfs-progress-header {
