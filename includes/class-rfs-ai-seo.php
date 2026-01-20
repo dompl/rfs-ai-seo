@@ -195,8 +195,9 @@ final class RFS_AI_SEO {
 	public function enqueue_admin_assets(string $hook): void {
 		// Only load on our plugin pages and product/category edit screens.
 		$allowed_hooks = [
-			'toplevel_page_rfs-ai-seo',
-			'rfs-ai-seo_page_rfs-ai-seo-bulk',
+			'woocommerce_page_rfs-ai-seo',
+			'woocommerce_page_rfs-ai-seo-bulk',
+			'woocommerce_page_rfs-ai-seo-stats',
 			'post.php',
 			'post-new.php',
 			'term.php',
@@ -225,7 +226,7 @@ final class RFS_AI_SEO {
 		);
 
 		// Enqueue bulk generator JS on bulk page.
-		if ($hook === 'rfs-ai-seo_page_rfs-ai-seo-bulk') {
+		if ($hook === 'woocommerce_page_rfs-ai-seo-bulk') {
 			wp_enqueue_script(
 				'rfs-ai-seo-bulk',
 				RFS_AI_SEO_PLUGIN_URL . 'admin/js/bulk-generator.js',
@@ -233,9 +234,25 @@ final class RFS_AI_SEO {
 				RFS_AI_SEO_VERSION,
 				true
 			);
+
+			// Localize bulk generator script.
+			wp_localize_script(
+				'rfs-ai-seo-bulk',
+				'rfsAiSeo',
+				[
+					'ajaxUrl' => admin_url('admin-ajax.php'),
+					'nonce' => wp_create_nonce('rfs_ai_seo_nonce'),
+					'strings' => [
+						'generating' => __('Generating...', 'rfs-ai-seo'),
+						'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),
+						'confirmOverwrite' => __('This item already has meta data. Do you want to overwrite it?', 'rfs-ai-seo'),
+						'noItems' => __('No items found with current filters.', 'rfs-ai-seo'),
+					],
+				]
+			);
 		}
 
-		// Localize script with AJAX URL and nonce.
+		// Localize admin script with AJAX URL and nonce.
 		wp_localize_script(
 			'rfs-ai-seo-admin',
 			'rfsAiSeo',
