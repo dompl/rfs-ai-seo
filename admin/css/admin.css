@@ -230,12 +230,99 @@
 }
 
 /* Bulk Generator Styles */
+.rfs-ai-seo-bulk-generator {
+	max-width: 1400px;
+}
+
 .rfs-ai-seo-bulk-filters {
 	display: flex;
 	gap: 10px;
 	align-items: flex-end;
 	margin-bottom: 20px;
 	flex-wrap: wrap;
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.rfs-ai-seo-bulk-filters .filter-group {
+	display: flex;
+	flex-direction: column;
+}
+
+.rfs-ai-seo-bulk-filters label {
+	font-size: 12px;
+	font-weight: 600;
+	margin-bottom: 5px;
+	color: #1d2327;
+}
+
+.rfs-ai-seo-bulk-filters select,
+.rfs-ai-seo-bulk-filters input[type="text"] {
+	min-width: 180px;
+}
+
+.rfs-ai-seo-bulk-results {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 0;
+}
+
+.rfs-ai-seo-bulk-table {
+	margin: 0 !important;
+}
+
+.rfs-ai-seo-bulk-table .column-thumbnail {
+	width: 60px;
+}
+
+.rfs-ai-seo-bulk-table .column-status {
+	width: 100px;
+	text-align: center;
+}
+
+.rfs-ai-seo-bulk-table .column-title,
+.rfs-ai-seo-bulk-table .column-description {
+	width: 250px;
+}
+
+.rfs-ai-seo-bulk-table img {
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 4px;
+}
+
+.rfs-ai-seo-status {
+	display: inline-flex;
+	gap: 3px;
+	align-items: center;
+}
+
+.rfs-ai-seo-status-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #c3c4c7;
+}
+
+.rfs-ai-seo-status-dot.filled {
+	background: #00a32a;
+}
+
+.rfs-ai-seo-log-entry {
+	padding: 5px 0;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.rfs-ai-seo-log-entry.success {
+	color: #00a32a;
+}
+
+.rfs-ai-seo-log-entry.error {
+	color: #d63638;
 }
 
 /* Progress Panel Improvements */
