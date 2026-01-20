@@ -44,22 +44,11 @@ class Admin {
 	 * @return void
 	 */
 	public function register_menu(): void {
-		// Main menu page.
-		add_menu_page(
-			__('RFS AI SEO', 'rfs-ai-seo'),
-			__('RFS AI SEO', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-seo',
-			[$this, 'render_settings_page'],
-			'dashicons-search',
-			56
-		);
-
-		// Settings submenu (default).
+		// Add main settings page under WooCommerce.
 		add_submenu_page(
-			'rfs-ai-seo',
-			__('Settings', 'rfs-ai-seo'),
-			__('Settings', 'rfs-ai-seo'),
+			'woocommerce',
+			__('AI SEO Settings', 'rfs-ai-seo'),
+			__('AI SEO', 'rfs-ai-seo'),
 			'manage_options',
 			'rfs-ai-seo',
 			[$this, 'render_settings_page']
@@ -67,9 +56,9 @@ class Admin {
 
 		// Bulk Generate submenu.
 		add_submenu_page(
-			'rfs-ai-seo',
-			__('Bulk Generate', 'rfs-ai-seo'),
-			__('Bulk Generate', 'rfs-ai-seo'),
+			'woocommerce',
+			__('AI SEO Bulk Generate', 'rfs-ai-seo'),
+			__('AI SEO Bulk', 'rfs-ai-seo'),
 			'manage_options',
 			'rfs-ai-seo-bulk',
 			[$this, 'render_bulk_page']
@@ -77,9 +66,9 @@ class Admin {
 
 		// Usage Stats submenu.
 		add_submenu_page(
-			'rfs-ai-seo',
-			__('Usage Statistics', 'rfs-ai-seo'),
-			__('Usage Statistics', 'rfs-ai-seo'),
+			'woocommerce',
+			__('AI SEO Usage Statistics', 'rfs-ai-seo'),
+			__('AI SEO Stats', 'rfs-ai-seo'),
 			'manage_options',
 			'rfs-ai-seo-stats',
 			[$this, 'render_stats_page']

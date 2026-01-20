@@ -111,42 +111,60 @@ if (!defined('ABSPATH')) {
 
 	<!-- Progress Panel (hidden by default) -->
 	<div class="rfs-ai-seo-progress" id="rfs_bulk_progress">
-		<h2><?php esc_html_e('Generating...', 'rfs-ai-seo'); ?></h2>
-
-		<div class="rfs-ai-seo-progress-bar">
-			<div class="rfs-ai-seo-progress-bar-fill" id="rfs_progress_bar" style="width: 0%;"></div>
-		</div>
-
-		<div class="rfs-ai-seo-progress-stats">
-			<div>
-				<strong><?php esc_html_e('Current:', 'rfs-ai-seo'); ?></strong>
-				<span id="rfs_progress_current"></span>
+		<div class="rfs-progress-header">
+			<div style="display: flex; align-items: center; gap: 12px;">
+				<span class="spinner is-active" style="float: none; margin: 0;"></span>
+				<h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #1d2327;">
+					<?php esc_html_e('Generating SEO Meta...', 'rfs-ai-seo'); ?>
+				</h2>
 			</div>
-			<div>
-				<strong><?php esc_html_e('Progress:', 'rfs-ai-seo'); ?></strong>
-				<span id="rfs_progress_count">0 / 0 (0%)</span>
-			</div>
-			<div>
-				<strong><?php esc_html_e('Success:', 'rfs-ai-seo'); ?></strong>
-				<span id="rfs_progress_success">0</span>
-			</div>
-			<div>
-				<strong><?php esc_html_e('Failed:', 'rfs-ai-seo'); ?></strong>
-				<span id="rfs_progress_failed">0</span>
-			</div>
-			<div>
-				<strong><?php esc_html_e('Tokens:', 'rfs-ai-seo'); ?></strong>
-				<span id="rfs_progress_tokens">0</span>
-			</div>
-		</div>
-
-		<div class="rfs-ai-seo-progress-actions" style="margin: 15px 0;">
 			<button type="button" class="button button-secondary" id="rfs_bulk_stop_btn">
 				<?php esc_html_e('Stop', 'rfs-ai-seo'); ?>
 			</button>
 		</div>
 
-		<div class="rfs-ai-seo-progress-log" id="rfs_progress_log"></div>
+		<div class="rfs-ai-seo-progress-bar-container">
+			<div class="rfs-progress-bar-label">
+				<span id="rfs_progress_count">0 / 0 (0%)</span>
+			</div>
+			<div class="rfs-ai-seo-progress-bar">
+				<div class="rfs-ai-seo-progress-bar-fill" id="rfs_progress_bar" style="width: 0%;"></div>
+			</div>
+		</div>
+
+		<div class="rfs-progress-current-item">
+			<strong><?php esc_html_e('Currently processing:', 'rfs-ai-seo'); ?></strong>
+			<span id="rfs_progress_current"><?php esc_html_e('Initializing...', 'rfs-ai-seo'); ?></span>
+		</div>
+
+		<div class="rfs-ai-seo-progress-stats">
+			<div class="rfs-stat-card success">
+				<div class="rfs-stat-icon">✓</div>
+				<div class="rfs-stat-content">
+					<div class="rfs-stat-value" id="rfs_progress_success">0</div>
+					<div class="rfs-stat-label"><?php esc_html_e('Success', 'rfs-ai-seo'); ?></div>
+				</div>
+			</div>
+			<div class="rfs-stat-card error">
+				<div class="rfs-stat-icon">✗</div>
+				<div class="rfs-stat-content">
+					<div class="rfs-stat-value" id="rfs_progress_failed">0</div>
+					<div class="rfs-stat-label"><?php esc_html_e('Failed', 'rfs-ai-seo'); ?></div>
+				</div>
+			</div>
+			<div class="rfs-stat-card info">
+				<div class="rfs-stat-icon">🎯</div>
+				<div class="rfs-stat-content">
+					<div class="rfs-stat-value" id="rfs_progress_tokens">0</div>
+					<div class="rfs-stat-label"><?php esc_html_e('Tokens', 'rfs-ai-seo'); ?></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="rfs-progress-log-container">
+			<h3><?php esc_html_e('Activity Log', 'rfs-ai-seo'); ?></h3>
+			<div class="rfs-ai-seo-progress-log" id="rfs_progress_log"></div>
+		</div>
 
 		<!-- Completion Summary (hidden) -->
 		<div class="rfs-ai-seo-completion-summary" id="rfs_completion_summary" style="display: none;">
