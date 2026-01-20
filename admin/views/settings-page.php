@@ -146,40 +146,6 @@ $prompt_category = $settings->get_prompt('category');
 						<div id="rfs_ai_seo_test_result" style="margin-top: 10px;"></div>
 					</td>
 				</tr>
-				<?php
-				// Display cost multiplier and cap info.
-				$cost_multiplier = $settings->get_cost_multiplier();
-				$spending_cap = $settings->get_spending_cap();
-				$has_cap = $settings->has_spending_cap();
-				?>
-				<tr>
-					<th scope="row">
-						<?php esc_html_e('Cost Settings', 'rfs-ai-seo'); ?>
-					</th>
-					<td>
-						<p style="margin: 0 0 8px 0;">
-							<strong><?php esc_html_e('Cost Multiplier:', 'rfs-ai-seo'); ?></strong> <?php echo esc_html($cost_multiplier); ?>x<br>
-							<span class="description">
-								<?php esc_html_e('All displayed costs are multiplied by this factor. Configured in wp-config.php via RFS_AI_SEO_MULTIPLYER constant.', 'rfs-ai-seo'); ?>
-							</span>
-						</p>
-						<?php if ($has_cap) : ?>
-							<p style="margin: 8px 0 0 0;">
-								<strong><?php esc_html_e('Monthly Spending Cap:', 'rfs-ai-seo'); ?></strong> $<?php echo esc_html(number_format($spending_cap, 2)); ?><br>
-								<span class="description">
-									<?php esc_html_e('Maximum allowed spending per month. Configured in wp-config.php via RFS_AI_SEO_CAP constant.', 'rfs-ai-seo'); ?>
-								</span>
-							</p>
-						<?php else : ?>
-							<p style="margin: 8px 0 0 0;">
-								<strong><?php esc_html_e('Monthly Spending Cap:', 'rfs-ai-seo'); ?></strong> <?php esc_html_e('Not set', 'rfs-ai-seo'); ?><br>
-								<span class="description">
-									<?php esc_html_e('To set a spending cap, define RFS_AI_SEO_CAP in wp-config.php', 'rfs-ai-seo'); ?>
-								</span>
-							</p>
-						<?php endif; ?>
-					</td>
-				</tr>
 			</table>
 
 		<?php elseif ($active_tab === 'prompts') : ?>
