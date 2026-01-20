@@ -137,6 +137,17 @@ class Generator {
 		$yoast = new Yoast_Integration();
 		$current_meta = $yoast->get_meta($object_id, $object_type);
 
+		// Log generation.
+		$logger = new Usage_Logger();
+		$logger->log($object_id, $object_type, [
+			'tokens_prompt' => $result['tokens']['prompt'],
+			'tokens_completion' => $result['tokens']['completion'],
+			'tokens_total' => $result['tokens']['total'],
+			'model' => $model,
+			'generated_title' => $result['title'],
+			'generated_description' => $result['description'],
+		]);
+
 		return [
 			'success' => true,
 			'title' => $result['title'],

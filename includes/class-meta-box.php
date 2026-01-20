@@ -28,6 +28,9 @@ class Meta_Box {
 		// Register meta boxes.
 		add_action('add_meta_boxes', [$this, 'register_meta_boxes']);
 
+		// Register category fields.
+		add_action('product_cat_edit_form_fields', [$this, 'render_category_fields'], 10, 2);
+
 		// Register AJAX handlers.
 		add_action('wp_ajax_rfs_ai_seo_generate', [$this, 'ajax_generate']);
 		add_action('wp_ajax_rfs_ai_seo_save_meta', [$this, 'ajax_save_meta']);
@@ -68,6 +71,30 @@ class Meta_Box {
 
 		// Include meta box template.
 		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/meta-box.php';
+	}
+
+	/**
+	 * Render category meta fields.
+	 *
+	 * @param \WP_Term $term Term object.
+	 * @return void
+	 */
+	public function render_category_fields(\WP_Term $term): void {
+		// Get current Yoast meta.
+		$yoast = new Yoast_Integration();
+		$current_meta = $yoast->get_meta($term->term_id, 'product_cat');
+
+		// Get settings for character limits.
+		$settings = new Settings();
+		$title_max = $settings->get_title_max_length();
+		$desc_max = $settings->get_description_max_length();
+
+		// Set object ID and type for template.
+		$object_id = $term->term_id;
+		$object_type = 'product_cat';
+
+		// Include category meta box template.
+		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/category-meta-box.php';
 	}
 
 	/**

@@ -81,6 +81,7 @@ final class RFS_AI_SEO {
 		$this->settings = new Settings();
 		$this->admin = new Admin();
 		new Meta_Box(); // Initialize meta boxes.
+		new Bulk_Generator(); // Initialize bulk generator.
 
 		// Enqueue admin assets.
 		add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
@@ -103,6 +104,8 @@ final class RFS_AI_SEO {
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-prompt-manager.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-generator.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-meta-box.php';
+		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-bulk-generator.php';
+		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-usage-logger.php';
 	}
 
 	/**
@@ -221,6 +224,17 @@ final class RFS_AI_SEO {
 			true
 		);
 
+		// Enqueue bulk generator JS on bulk page.
+		if ($hook === 'rfs-ai-seo_page_rfs-ai-seo-bulk') {
+			wp_enqueue_script(
+				'rfs-ai-seo-bulk',
+				RFS_AI_SEO_PLUGIN_URL . 'admin/js/bulk-generator.js',
+				['jquery'],
+				RFS_AI_SEO_VERSION,
+				true
+			);
+		}
+
 		// Localize script with AJAX URL and nonce.
 		wp_localize_script(
 			'rfs-ai-seo-admin',
@@ -232,6 +246,7 @@ final class RFS_AI_SEO {
 					'generating' => __('Generating...', 'rfs-ai-seo'),
 					'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),
 					'confirmOverwrite' => __('This item already has meta data. Do you want to overwrite it?', 'rfs-ai-seo'),
+					'noItems' => __('No items found with current filters.', 'rfs-ai-seo'),
 				],
 			]
 		);

@@ -33,6 +33,9 @@ class Admin {
 
 		// Register AJAX handlers.
 		add_action('wp_ajax_rfs_ai_seo_test_connection', [$this, 'ajax_test_connection']);
+
+		// Register admin post handlers.
+		add_action('admin_post_rfs_ai_seo_export_csv', [$this, 'export_csv']);
 	}
 
 	/**
@@ -142,10 +145,17 @@ class Admin {
 			wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'rfs-ai-seo'));
 		}
 
-		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__('Usage Statistics', 'rfs-ai-seo') . '</h1>';
-		echo '<p>' . esc_html__('Usage statistics will be displayed here...', 'rfs-ai-seo') . '</p>';
-		echo '</div>';
+		// Get logger instance.
+		$logger = new Usage_Logger();
+
+		// Get stats for current month.
+		$stats = $logger->get_stats('month');
+
+		// Get recent logs.
+		$recent_logs = $logger->get_recent_logs(50);
+
+		// Include stats page template.
+		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/usage-stats-page.php';
 	}
 
 	/**
@@ -273,5 +283,42 @@ class Admin {
 				$model
 			),
 		]);
+	}
+
+	/**
+	 * Export CSV handler.
+	 *
+	 * @return void
+	 */
+	public function export_csv(): void {
+		// Check nonce.
+		if (!isset($_POST['rfs_ai_seo_export_nonce']) || !wp_verify_nonce($_POST['rfs_ai_seo_export_nonce'], 'rfs_ai_seo_export_csv')) {
+			wp_die(esc_html__('Security check failed.', 'rfs-ai-seo'));
+		}
+
+		// Check capabilities.
+		if (!current_user_can('manage_options')) {
+			wp_die(esc_html__('You do not have permission to perform this action.', 'rfs-ai-seo'));
+		}
+
+		// Get date range.
+		$start_date = isset($_POST['start_date']) ? sanitize_text_field($_POST['start_date']) : date('Y-m-01');
+		$end_date = isset($_POST['end_date']) ? sanitize_text_field($_POST['end_date']) : date('Y-m-d');
+
+		// Get logger.
+		$logger = new Usage_Logger();
+
+		// Generate CSV.
+		$csv = $logger->export_csv($start_date, $end_date);
+
+		// Set headers for download.
+		header('Content-Type: text/csv; charset=utf-8');
+		header('Content-Disposition: attachment; filename=rfs-ai-seo-usage-' . $start_date . '-to-' . $end_date . '.csv');
+		header('Pragma: no-cache');
+		header('Expires: 0');
+
+		// Output CSV.
+		echo $csv;
+		exit;
 	}
 }
