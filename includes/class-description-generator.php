@@ -28,6 +28,7 @@ class Description_Generator {
 		add_action('wp_ajax_rfs_ai_save_description', [$this, 'ajax_save_description']);
 		add_action('wp_ajax_rfs_ai_restore_description', [$this, 'ajax_restore_description']);
 		add_action('wp_ajax_rfs_ai_bulk_generate_description', [$this, 'ajax_bulk_generate_description']);
+		add_action('wp_ajax_rfs_ai_get_description_items', [$this, 'ajax_get_description_items']);
 	}
 
 	/**
@@ -329,5 +330,96 @@ class Description_Generator {
 		}
 
 		wp_send_json_success($result);
+	}
+
+	/**
+	 * AJAX handler for getting filtered items for bulk generator.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_description_items(): void {
+		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
+
+		if (!current_user_can('manage_options')) {
+			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+		}
+
+		$category = isset($_POST['category']) ? absint($_POST['category']) : 0;
+		$status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : 'all';
+		$search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+		$per_page = isset($_POST['per_page']) ? absint($_POST['per_page']) : 20;
+		$page = isset($_POST['page']) ? absint($_POST['page']) : 1;
+
+		// Build query args.
+		$args = [
+			'post_type' => 'product',
+			'posts_per_page' => $per_page,
+			'paged' => $page,
+			'orderby' => 'title',
+			'order' => 'ASC',
+			'post_status' => 'publish',
+		];
+
+		// Filter by category.
+		if ($category > 0) {
+			$args['tax_query'] = [
+				[
+					'taxonomy' => 'product_cat',
+					'field' => 'term_id',
+					'terms' => $category,
+				],
+			];
+		}
+
+		// Filter by search.
+		if (!empty($search)) {
+			$args['s'] = $search;
+		}
+
+		// Execute query.
+		$query = new \WP_Query($args);
+		$items = [];
+
+		if ($query->have_posts()) {
+			while ($query->have_posts()) {
+				$query->the_post();
+				$product_id = get_the_ID();
+				$product = wc_get_product($product_id);
+
+				if (!$product) {
+					continue;
+				}
+
+				$description = $product->get_description();
+				$has_description = !empty($description);
+
+				// Filter by status.
+				if ($status === 'empty' && $has_description) {
+					continue;
+				}
+				if ($status === 'has_description' && !$has_description) {
+					continue;
+				}
+
+				// Get product thumbnail.
+				$thumbnail = get_the_post_thumbnail_url($product_id, 'thumbnail');
+
+				$items[] = [
+					'id' => $product_id,
+					'name' => $product->get_name(),
+					'edit_url' => get_edit_post_link($product_id),
+					'thumbnail' => $thumbnail,
+					'current_description' => $has_description ? wp_trim_words($description, 20, '...') : '',
+					'has_description' => $has_description,
+				];
+			}
+
+			wp_reset_postdata();
+		}
+
+		wp_send_json_success([
+			'items' => $items,
+			'total' => $query->found_posts,
+		]);
 	}
 }
