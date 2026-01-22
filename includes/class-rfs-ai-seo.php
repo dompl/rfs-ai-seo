@@ -228,39 +228,13 @@ final class RFS_AI_SEO {
 			return;
 		}
 
-		// Enqueue Tailwind CSS and Flowbite only on plugin pages.
+		// Enqueue plugin-specific styling only on plugin pages.
 		if ($is_plugin_page) {
-			// Enqueue Tailwind CSS CDN.
 			wp_enqueue_style(
-				'rfs-ai-tailwind',
-				'https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css',
+				'rfs-ai-plugin-style',
+				RFS_AI_SEO_PLUGIN_URL . 'admin/css/plugin-style.css',
 				[],
-				'3.4.1'
-			);
-
-			// Enqueue Flowbite CSS.
-			wp_enqueue_style(
-				'rfs-ai-flowbite',
-				'https://cdn.jsdelivr.net/npm/flowbite@2.2.1/dist/flowbite.min.css',
-				[],
-				'2.2.1'
-			);
-
-			// Enqueue custom Tailwind overrides (load last).
-			wp_enqueue_style(
-				'rfs-ai-tailwind-custom',
-				RFS_AI_SEO_PLUGIN_URL . 'admin/css/tailwind-custom.css',
-				['rfs-ai-tailwind', 'rfs-ai-flowbite'],
 				RFS_AI_SEO_VERSION
-			);
-
-			// Enqueue Flowbite JS.
-			wp_enqueue_script(
-				'rfs-ai-flowbite',
-				'https://cdn.jsdelivr.net/npm/flowbite@2.2.1/dist/flowbite.min.js',
-				[],
-				'2.2.1',
-				true
 			);
 		}
 
