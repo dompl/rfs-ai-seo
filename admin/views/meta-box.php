@@ -93,4 +93,73 @@ if (!defined('ABSPATH')) {
 	<input type="hidden" id="rfs_ai_seo_object_type" value="product">
 	<input type="hidden" id="rfs_ai_seo_title_max" value="<?php echo esc_attr($title_max); ?>">
 	<input type="hidden" id="rfs_ai_seo_desc_max" value="<?php echo esc_attr($desc_max); ?>">
+
+	<hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+	<!-- Product Description Section -->
+	<h4 style="margin: 15px 0 10px 0;"><?php esc_html_e('Product Description', 'rfs-ai-seo'); ?></h4>
+
+	<!-- Current Description Status -->
+	<div class="rfs-description-status" style="margin-bottom: 15px;">
+		<p style="margin: 5px 0; font-size: 12px;">
+			<strong><?php esc_html_e('Current Description:', 'rfs-ai-seo'); ?></strong>
+			<?php if (!empty($current_description)): ?>
+				<span style="color: #46b450;">✓ <?php esc_html_e('Set', 'rfs-ai-seo'); ?></span>
+				<span style="color: #666;">(<?php echo esc_html(str_word_count($current_description)); ?> <?php esc_html_e('words', 'rfs-ai-seo'); ?>)</span>
+			<?php else: ?>
+				<span style="color: #dc3232;">✗ <?php esc_html_e('Empty', 'rfs-ai-seo'); ?></span>
+			<?php endif; ?>
+		</p>
+
+		<?php if ($has_original): ?>
+			<p style="margin: 5px 0; font-size: 12px; padding: 5px; background: #fff3cd; border-left: 3px solid #ffc107;">
+				<strong><?php esc_html_e('Original Backup:', 'rfs-ai-seo'); ?></strong>
+				<?php esc_html_e('Available', 'rfs-ai-seo'); ?>
+				<?php if ($original_saved_at): ?>
+					<span style="color: #666;">(<?php echo esc_html(human_time_diff(strtotime($original_saved_at), current_time('timestamp'))); ?> <?php esc_html_e('ago', 'rfs-ai-seo'); ?>)</span>
+				<?php endif; ?>
+				<br>
+				<button type="button" class="button button-small" id="rfs_restore_description_btn" style="margin-top: 5px;">
+					<?php esc_html_e('Restore Original', 'rfs-ai-seo'); ?>
+				</button>
+			</p>
+		<?php endif; ?>
+	</div>
+
+	<!-- Generate Description Button -->
+	<div style="margin-bottom: 10px;">
+		<button type="button" class="button button-secondary button-large" id="rfs_generate_description_btn" style="width: 100%;">
+			<?php esc_html_e('Generate Description with AI', 'rfs-ai-seo'); ?>
+		</button>
+		<span class="spinner" id="rfs_description_spinner" style="float: none; margin: 8px auto 0; display: none;"></span>
+	</div>
+
+	<!-- Description Preview Panel (hidden by default) -->
+	<div class="rfs-description-preview" id="rfs_description_preview" style="display: none; background: #f6f7f7; padding: 15px; border-radius: 4px; margin-top: 10px;">
+		<h4 style="margin-top: 0;"><?php esc_html_e('Generated Description', 'rfs-ai-seo'); ?></h4>
+
+		<textarea id="rfs_description_preview_text"
+				  class="widefat"
+				  rows="10"
+				  style="font-family: inherit; margin-bottom: 10px;"></textarea>
+
+		<div style="margin-bottom: 10px;">
+			<span id="rfs_description_word_count" style="font-size: 12px; color: #666;"></span>
+		</div>
+
+		<div class="rfs-ai-seo-actions">
+			<button type="button" class="button button-primary" id="rfs_save_description_btn">
+				<?php esc_html_e('Save Description', 'rfs-ai-seo'); ?>
+			</button>
+			<button type="button" class="button" id="rfs_regenerate_description_btn">
+				<?php esc_html_e('Regenerate', 'rfs-ai-seo'); ?>
+			</button>
+			<button type="button" class="button" id="rfs_cancel_description_btn">
+				<?php esc_html_e('Cancel', 'rfs-ai-seo'); ?>
+			</button>
+			<span class="spinner" id="rfs_save_description_spinner" style="float: none; margin: 8px 0 0 8px; display: none;"></span>
+		</div>
+
+		<p id="rfs_description_token_info" style="font-size: 11px; color: #666; margin-top: 10px;"></p>
+	</div>
 </div>

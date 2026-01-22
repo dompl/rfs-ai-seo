@@ -69,6 +69,14 @@ class Meta_Box {
 		$title_max = $settings->get_title_max_length();
 		$desc_max = $settings->get_description_max_length();
 
+		// Check if original description exists.
+		$has_original = get_post_meta($post->ID, '_rfs_ai_original_description', true);
+		$original_saved_at = get_post_meta($post->ID, '_rfs_ai_original_saved_at', true);
+
+		// Get current product description.
+		$product = wc_get_product($post->ID);
+		$current_description = $product ? $product->get_description() : '';
+
 		// Include meta box template.
 		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/meta-box.php';
 	}

@@ -229,6 +229,20 @@ final class RFS_AI_SEO {
 			true
 		);
 
+		// Enqueue description generator JS on product edit screens.
+		if (in_array($hook, ['post.php', 'post-new.php'])) {
+			$screen = get_current_screen();
+			if ($screen && $screen->post_type === 'product') {
+				wp_enqueue_script(
+					'rfs-ai-description-generator',
+					RFS_AI_SEO_PLUGIN_URL . 'admin/js/description-generator.js',
+					['jquery'],
+					RFS_AI_SEO_VERSION,
+					true
+				);
+			}
+		}
+
 		// Enqueue bulk generator JS on bulk page.
 		if ($hook === 'woocommerce_page_rfs-ai-seo-bulk') {
 			wp_enqueue_script(
