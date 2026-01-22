@@ -13,12 +13,14 @@ WordPress plugin that generates SEO meta titles and descriptions for WooCommerce
 ## Features
 
 - AI-powered meta title and description generation
+- AI image generation with DALL-E
 - Single item and bulk generation
 - SERP preview with character counters
 - Customizable prompt templates
 - ACF field support (including flexible content)
 - Usage tracking and statistics
 - Direct Yoast SEO integration
+- Multiple AI model support (GPT-4o, GPT-4o-mini, Nano Banana)
 
 ## Installation
 
@@ -26,8 +28,18 @@ WordPress plugin that generates SEO meta titles and descriptions for WooCommerce
 2. Upload to WordPress via Plugins > Add New > Upload
 3. Activate the plugin
 4. Go to RFS AI SEO > Settings
-5. Enter your OpenAI API key
+5. Enter your OpenAI API key (or define it in wp-config.php)
 6. Configure prompt templates as needed
+
+### API Key Configuration
+
+For better security, you can define your OpenAI API key in `wp-config.php` instead of storing it in the database:
+
+```php
+define('RFS_AI_SEO_OPEN_AI_KEY', 'your-openai-api-key-here');
+```
+
+When the API key is defined in wp-config.php, it takes precedence over the database setting and cannot be changed through the admin interface.
 
 ## Usage
 
@@ -46,6 +58,15 @@ WordPress plugin that generates SEO meta titles and descriptions for WooCommerce
 3. Select items or use "Generate for all filtered"
 4. Monitor progress
 5. Review results
+
+### Image Generation
+
+1. Go to WordPress Media Library
+2. Click on any image to view attachment details
+3. Add an "AI Image Description" for better prompts (optional)
+4. Click "Regenerate Image with AI"
+5. The original image is preserved and a new AI-generated version is created
+6. Configure image generation settings (model, size, quality, style) in Settings > API Settings
 
 ## Configuration
 
