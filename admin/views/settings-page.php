@@ -55,13 +55,13 @@ $prompt_category     = $settings->get_prompt( 'category' );
 	</div>
 
 	<h2 class="nav-tab-wrapper">
-		<a href="?page=rfs-ai-seo&tab=api" class="nav-tab <?php echo $active_tab === 'api' ? 'nav-tab-active' : ''; ?>">
+		<a href="?page=rfs-ai-settings&tab=api" class="nav-tab <?php echo $active_tab === 'api' ? 'nav-tab-active' : ''; ?>">
 			<?php esc_html_e( 'API Settings', 'rfs-ai-seo' ); ?>
 		</a>
-		<a href="?page=rfs-ai-seo&tab=prompts" class="nav-tab <?php echo $active_tab === 'prompts' ? 'nav-tab-active' : ''; ?>">
+		<a href="?page=rfs-ai-settings&tab=prompts" class="nav-tab <?php echo $active_tab === 'prompts' ? 'nav-tab-active' : ''; ?>">
 			<?php esc_html_e( 'Prompt Templates', 'rfs-ai-seo' ); ?>
 		</a>
-		<a href="?page=rfs-ai-seo&tab=content" class="nav-tab <?php echo $active_tab === 'content' ? 'nav-tab-active' : ''; ?>">
+		<a href="?page=rfs-ai-settings&tab=content" class="nav-tab <?php echo $active_tab === 'content' ? 'nav-tab-active' : ''; ?>">
 			<?php esc_html_e( 'Content Settings', 'rfs-ai-seo' ); ?>
 		</a>
 	</h2>
