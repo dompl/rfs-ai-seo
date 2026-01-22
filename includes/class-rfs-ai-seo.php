@@ -83,6 +83,7 @@ final class RFS_AI_SEO {
 		new Meta_Box(); // Initialize meta boxes.
 		new Bulk_Generator(); // Initialize bulk generator.
 		new Description_Generator(); // Initialize description generator.
+		new Image_Generator(); // Initialize image generator.
 
 		// Enqueue admin assets.
 		add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
@@ -108,6 +109,7 @@ final class RFS_AI_SEO {
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-meta-box.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-bulk-generator.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-usage-logger.php';
+		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-image-generator.php';
 	}
 
 	/**
@@ -195,8 +197,8 @@ final class RFS_AI_SEO {
 	 * @return void
 	 */
 	public function enqueue_admin_assets(string $hook): void {
-		// Only load on our plugin pages and product/category edit screens.
-		$allowed_hooks = [
+		// Plugin-specific pages.
+		$plugin_pages = [
 			'toplevel_page_rfs-ai',
 			'rfs-ai_page_rfs-ai-settings',
 			'rfs-ai_page_rfs-ai-seo-bulk',
@@ -204,14 +206,54 @@ final class RFS_AI_SEO {
 			'rfs-ai_page_rfs-ai-short-description-bulk',
 			'rfs-ai_page_rfs-ai-trainer',
 			'rfs-ai_page_rfs-ai-stats',
-			'post.php',
-			'post-new.php',
-			'term.php',
-			'edit-tags.php',
 		];
+
+		// Check if we're on a plugin page.
+		$is_plugin_page = in_array($hook, $plugin_pages, true);
+
+		// Check if we're on a product edit screen.
+		$is_product_screen = false;
+		if (in_array($hook, ['post.php', 'post-new.php'])) {
+			$screen = get_current_screen();
+			$is_product_screen = $screen && $screen->post_type === 'product';
+		}
+
+		// Only load on our plugin pages and product/category edit screens.
+		$allowed_hooks = array_merge(
+			$plugin_pages,
+			['post.php', 'post-new.php', 'term.php', 'edit-tags.php', 'upload.php']
+		);
 
 		if (!in_array($hook, $allowed_hooks, true)) {
 			return;
+		}
+
+		// Enqueue Tailwind CSS and Flowbite only on plugin pages.
+		if ($is_plugin_page) {
+			// Enqueue Tailwind CSS CDN.
+			wp_enqueue_style(
+				'rfs-ai-tailwind',
+				'https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css',
+				[],
+				'3.4.1'
+			);
+
+			// Enqueue Flowbite CSS.
+			wp_enqueue_style(
+				'rfs-ai-flowbite',
+				'https://cdn.jsdelivr.net/npm/flowbite@2.2.1/dist/flowbite.min.css',
+				[],
+				'2.2.1'
+			);
+
+			// Enqueue Flowbite JS.
+			wp_enqueue_script(
+				'rfs-ai-flowbite',
+				'https://cdn.jsdelivr.net/npm/flowbite@2.2.1/dist/flowbite.min.js',
+				[],
+				'2.2.1',
+				true
+			);
 		}
 
 		// Enqueue admin CSS.
@@ -246,6 +288,20 @@ final class RFS_AI_SEO {
 				wp_enqueue_script(
 					'rfs-ai-short-description-generator',
 					RFS_AI_SEO_PLUGIN_URL . 'admin/js/short-description-generator.js',
+					['jquery'],
+					RFS_AI_SEO_VERSION,
+					true
+				);
+			}
+		}
+
+		// Enqueue image generator JS on media library and attachment edit screens.
+		if (in_array($hook, ['post.php', 'upload.php'])) {
+			$screen = get_current_screen();
+			if ($screen && ($screen->post_type === 'attachment' || $screen->id === 'upload')) {
+				wp_enqueue_script(
+					'rfs-ai-image-generator',
+					RFS_AI_SEO_PLUGIN_URL . 'admin/js/image-generator.js',
 					['jquery'],
 					RFS_AI_SEO_VERSION,
 					true

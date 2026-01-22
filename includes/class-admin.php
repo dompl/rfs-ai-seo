@@ -345,6 +345,23 @@ class Admin {
 			update_option('rfs_ai_seo_acf_fields', $acf_fields);
 		}
 
+		// Save image generation settings.
+		if (isset($_POST['rfs_ai_seo_image_model'])) {
+			update_option('rfs_ai_seo_image_model', sanitize_text_field($_POST['rfs_ai_seo_image_model']));
+		}
+
+		if (isset($_POST['rfs_ai_seo_image_size'])) {
+			update_option('rfs_ai_seo_image_size', sanitize_text_field($_POST['rfs_ai_seo_image_size']));
+		}
+
+		if (isset($_POST['rfs_ai_seo_image_quality'])) {
+			update_option('rfs_ai_seo_image_quality', sanitize_text_field($_POST['rfs_ai_seo_image_quality']));
+		}
+
+		if (isset($_POST['rfs_ai_seo_image_style'])) {
+			update_option('rfs_ai_seo_image_style', sanitize_text_field($_POST['rfs_ai_seo_image_style']));
+		}
+
 		// Add success notice.
 		add_settings_error(
 			'rfs_ai_seo_messages',

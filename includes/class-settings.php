@@ -117,6 +117,47 @@ class Settings {
 				'default' => [],
 			]
 		);
+
+		// Image Generation Settings.
+		register_setting(
+			'rfs_ai_seo_settings',
+			'rfs_ai_seo_image_model',
+			[
+				'type' => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default' => 'dall-e-3',
+			]
+		);
+
+		register_setting(
+			'rfs_ai_seo_settings',
+			'rfs_ai_seo_image_size',
+			[
+				'type' => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default' => '1024x1024',
+			]
+		);
+
+		register_setting(
+			'rfs_ai_seo_settings',
+			'rfs_ai_seo_image_quality',
+			[
+				'type' => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default' => 'standard',
+			]
+		);
+
+		register_setting(
+			'rfs_ai_seo_settings',
+			'rfs_ai_seo_image_style',
+			[
+				'type' => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default' => 'vivid',
+			]
+		);
 	}
 
 	/**
@@ -349,5 +390,41 @@ class Settings {
 	 */
 	public function has_spending_cap(): bool {
 		return defined('RFS_AI_SEO_CAP') && RFS_AI_SEO_CAP > 0;
+	}
+
+	/**
+	 * Get image generation model.
+	 *
+	 * @return string Image model name.
+	 */
+	public function get_image_model(): string {
+		return $this->get_option('rfs_ai_seo_image_model', 'dall-e-3');
+	}
+
+	/**
+	 * Get image size/aspect ratio.
+	 *
+	 * @return string Image size (1024x1024, 1024x1792, 1792x1024).
+	 */
+	public function get_image_size(): string {
+		return $this->get_option('rfs_ai_seo_image_size', '1024x1024');
+	}
+
+	/**
+	 * Get image quality.
+	 *
+	 * @return string Image quality (standard, hd).
+	 */
+	public function get_image_quality(): string {
+		return $this->get_option('rfs_ai_seo_image_quality', 'standard');
+	}
+
+	/**
+	 * Get image style.
+	 *
+	 * @return string Image style (vivid, natural).
+	 */
+	public function get_image_style(): string {
+		return $this->get_option('rfs_ai_seo_image_style', 'vivid');
 	}
 }
