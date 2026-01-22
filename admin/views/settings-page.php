@@ -130,9 +130,12 @@ echo wp_kses_post(
 							<option value="gpt-4o-mini" <?php selected( $model, 'gpt-4o-mini' ); ?>>
 								<?php esc_html_e( 'GPT-4o-mini', 'rfs-ai-seo' ); ?>
 							</option>
+							<option value="nano-banana" <?php selected( $model, 'nano-banana' ); ?>>
+								<?php esc_html_e( 'Nano Banana', 'rfs-ai-seo' ); ?>
+							</option>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'GPT-4o: More capable, higher cost. GPT-4o-mini: Faster, lower cost.', 'rfs-ai-seo' ); ?>
+							<?php esc_html_e( 'GPT-4o: More capable, higher cost. GPT-4o-mini: Faster, lower cost. Nano Banana: Custom model.', 'rfs-ai-seo' ); ?>
 						</p>
 					</td>
 				</tr>
