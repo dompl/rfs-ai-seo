@@ -82,6 +82,7 @@ final class RFS_AI_SEO {
 		$this->admin = new Admin();
 		new Meta_Box(); // Initialize meta boxes.
 		new Bulk_Generator(); // Initialize bulk generator.
+		new Description_Generator(); // Initialize description generator.
 
 		// Enqueue admin assets.
 		add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
@@ -103,6 +104,7 @@ final class RFS_AI_SEO {
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-content-collector.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-prompt-manager.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-generator.php';
+		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-description-generator.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-meta-box.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-bulk-generator.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-usage-logger.php';
