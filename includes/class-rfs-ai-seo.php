@@ -197,6 +197,8 @@ final class RFS_AI_SEO {
 		$allowed_hooks = [
 			'woocommerce_page_rfs-ai-seo',
 			'woocommerce_page_rfs-ai-seo-bulk',
+			'woocommerce_page_rfs-ai-description-bulk',
+			'woocommerce_page_rfs-ai-trainer',
 			'woocommerce_page_rfs-ai-seo-stats',
 			'post.php',
 			'post-new.php',
