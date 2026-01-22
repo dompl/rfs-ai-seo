@@ -74,6 +74,16 @@ class Admin {
 			[$this, 'render_description_bulk_page']
 		);
 
+		// Short Description Generator submenu.
+		add_submenu_page(
+			'woocommerce',
+			__('Product Short Description Generator', 'rfs-ai-seo'),
+			__('Short Description Generator', 'rfs-ai-seo'),
+			'manage_options',
+			'rfs-ai-short-description-bulk',
+			[$this, 'render_short_description_bulk_page']
+		);
+
 		// AI Trainer submenu.
 		add_submenu_page(
 			'woocommerce',
@@ -185,6 +195,28 @@ class Admin {
 			echo '<div class="wrap">';
 			echo '<h1>' . esc_html__('Product Description Generator', 'rfs-ai-seo') . '</h1>';
 			echo '<p>' . esc_html__('Description generation functionality coming soon...', 'rfs-ai-seo') . '</p>';
+			echo '</div>';
+		}
+	}
+
+	/**
+	 * Render short description bulk generator page.
+	 *
+	 * @return void
+	 */
+	public function render_short_description_bulk_page(): void {
+		// Check user capabilities.
+		if (!current_user_can('manage_options')) {
+			wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'rfs-ai-seo'));
+		}
+
+		// Include short description bulk generator page template.
+		if (file_exists(RFS_AI_SEO_PLUGIN_DIR . 'admin/views/short-description-bulk-page.php')) {
+			include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/short-description-bulk-page.php';
+		} else {
+			echo '<div class="wrap">';
+			echo '<h1>' . esc_html__('Product Short Description Generator', 'rfs-ai-seo') . '</h1>';
+			echo '<p>' . esc_html__('Short description generation functionality coming soon...', 'rfs-ai-seo') . '</p>';
 			echo '</div>';
 		}
 	}

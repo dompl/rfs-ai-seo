@@ -240,6 +240,14 @@ final class RFS_AI_SEO {
 					RFS_AI_SEO_VERSION,
 					true
 				);
+
+				wp_enqueue_script(
+					'rfs-ai-short-description-generator',
+					RFS_AI_SEO_PLUGIN_URL . 'admin/js/short-description-generator.js',
+					['jquery'],
+					RFS_AI_SEO_VERSION,
+					true
+				);
 			}
 		}
 
@@ -283,6 +291,32 @@ final class RFS_AI_SEO {
 			// Localize description bulk generator script.
 			wp_localize_script(
 				'rfs-ai-description-bulk',
+				'rfsAiSeo',
+				[
+					'ajaxUrl' => admin_url('admin-ajax.php'),
+					'nonce' => wp_create_nonce('rfs_ai_seo_nonce'),
+					'strings' => [
+						'generating' => __('Generating...', 'rfs-ai-seo'),
+						'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),
+						'noItems' => __('No products found with current filters.', 'rfs-ai-seo'),
+					],
+				]
+			);
+		}
+
+		// Enqueue short description bulk generator JS on short description bulk page.
+		if ($hook === 'woocommerce_page_rfs-ai-short-description-bulk') {
+			wp_enqueue_script(
+				'rfs-ai-short-description-bulk',
+				RFS_AI_SEO_PLUGIN_URL . 'admin/js/short-description-bulk.js',
+				['jquery'],
+				RFS_AI_SEO_VERSION,
+				true
+			);
+
+			// Localize short description bulk generator script.
+			wp_localize_script(
+				'rfs-ai-short-description-bulk',
 				'rfsAiSeo',
 				[
 					'ajaxUrl' => admin_url('admin-ajax.php'),

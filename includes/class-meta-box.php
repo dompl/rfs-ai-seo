@@ -77,6 +77,13 @@ class Meta_Box {
 		$product = wc_get_product($post->ID);
 		$current_description = $product ? $product->get_description() : '';
 
+		// Check if original short description exists.
+		$has_original_short = get_post_meta($post->ID, '_rfs_ai_original_short_description', true);
+		$original_short_saved_at = get_post_meta($post->ID, '_rfs_ai_original_short_saved_at', true);
+
+		// Get current product short description.
+		$current_short_description = $product ? $product->get_short_description() : '';
+
 		// Include meta box template.
 		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/meta-box.php';
 	}
