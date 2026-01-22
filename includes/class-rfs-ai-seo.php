@@ -197,11 +197,13 @@ final class RFS_AI_SEO {
 	public function enqueue_admin_assets(string $hook): void {
 		// Only load on our plugin pages and product/category edit screens.
 		$allowed_hooks = [
-			'woocommerce_page_rfs-ai-seo',
-			'woocommerce_page_rfs-ai-seo-bulk',
-			'woocommerce_page_rfs-ai-description-bulk',
-			'woocommerce_page_rfs-ai-trainer',
-			'woocommerce_page_rfs-ai-seo-stats',
+			'toplevel_page_rfs-ai',
+			'rfs-ai_page_rfs-ai-settings',
+			'rfs-ai_page_rfs-ai-seo-bulk',
+			'rfs-ai_page_rfs-ai-description-bulk',
+			'rfs-ai_page_rfs-ai-short-description-bulk',
+			'rfs-ai_page_rfs-ai-trainer',
+			'rfs-ai_page_rfs-ai-stats',
 			'post.php',
 			'post-new.php',
 			'term.php',
@@ -252,7 +254,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue bulk generator JS on bulk page.
-		if ($hook === 'woocommerce_page_rfs-ai-seo-bulk') {
+		if ($hook === 'rfs-ai_page_rfs-ai-seo-bulk') {
 			wp_enqueue_script(
 				'rfs-ai-seo-bulk',
 				RFS_AI_SEO_PLUGIN_URL . 'admin/js/bulk-generator.js',
@@ -279,7 +281,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue description bulk generator JS on description bulk page.
-		if ($hook === 'woocommerce_page_rfs-ai-description-bulk') {
+		if ($hook === 'rfs-ai_page_rfs-ai-description-bulk') {
 			wp_enqueue_script(
 				'rfs-ai-description-bulk',
 				RFS_AI_SEO_PLUGIN_URL . 'admin/js/description-bulk.js',
@@ -305,7 +307,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue short description bulk generator JS on short description bulk page.
-		if ($hook === 'woocommerce_page_rfs-ai-short-description-bulk') {
+		if ($hook === 'rfs-ai_page_rfs-ai-short-description-bulk') {
 			wp_enqueue_script(
 				'rfs-ai-short-description-bulk',
 				RFS_AI_SEO_PLUGIN_URL . 'admin/js/short-description-bulk.js',

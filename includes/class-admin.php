@@ -44,63 +44,84 @@ class Admin {
 	 * @return void
 	 */
 	public function register_menu(): void {
-		// Add main settings page under WooCommerce.
-		add_submenu_page(
-			'woocommerce',
-			__('RFS AI Settings', 'rfs-ai-seo'),
+		// Add top-level RFS AI menu.
+		add_menu_page(
+			__('RFS AI - AI-Powered Content Generation', 'rfs-ai-seo'),
 			__('RFS AI', 'rfs-ai-seo'),
 			'manage_options',
-			'rfs-ai-seo',
+			'rfs-ai',
+			[$this, 'render_dashboard_page'],
+			'dashicons-superhero',
+			58
+		);
+
+		// Dashboard (Overview) - default page.
+		add_submenu_page(
+			'rfs-ai',
+			__('RFS AI Dashboard', 'rfs-ai-seo'),
+			__('Dashboard', 'rfs-ai-seo'),
+			'manage_options',
+			'rfs-ai',
+			[$this, 'render_dashboard_page']
+		);
+
+		// Settings - API configuration.
+		add_submenu_page(
+			'rfs-ai',
+			__('Settings - API & Configuration', 'rfs-ai-seo'),
+			__('Settings', 'rfs-ai-seo'),
+			'manage_options',
+			'rfs-ai-settings',
 			[$this, 'render_settings_page']
 		);
 
-		// SEO Generator submenu.
+		// AI Trainer - Business context.
 		add_submenu_page(
-			'woocommerce',
-			__('SEO Meta Generator', 'rfs-ai-seo'),
-			__('SEO Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-seo-bulk',
-			[$this, 'render_bulk_page']
-		);
-
-		// Description Generator submenu.
-		add_submenu_page(
-			'woocommerce',
-			__('Product Description Generator', 'rfs-ai-seo'),
-			__('Description Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-description-bulk',
-			[$this, 'render_description_bulk_page']
-		);
-
-		// Short Description Generator submenu.
-		add_submenu_page(
-			'woocommerce',
-			__('Product Short Description Generator', 'rfs-ai-seo'),
-			__('Short Description Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-short-description-bulk',
-			[$this, 'render_short_description_bulk_page']
-		);
-
-		// AI Trainer submenu.
-		add_submenu_page(
-			'woocommerce',
-			__('AI Trainer', 'rfs-ai-seo'),
+			'rfs-ai',
+			__('AI Trainer - Teach AI About Your Business', 'rfs-ai-seo'),
 			__('AI Trainer', 'rfs-ai-seo'),
 			'manage_options',
 			'rfs-ai-trainer',
 			[$this, 'render_trainer_page']
 		);
 
-		// Usage Stats submenu.
+		// SEO Meta Generator.
 		add_submenu_page(
-			'woocommerce',
-			__('RFS AI Usage Statistics', 'rfs-ai-seo'),
-			__('Usage Stats', 'rfs-ai-seo'),
+			'rfs-ai',
+			__('SEO Meta Generator - Titles & Descriptions', 'rfs-ai-seo'),
+			__('SEO Meta Generator', 'rfs-ai-seo'),
 			'manage_options',
-			'rfs-ai-seo-stats',
+			'rfs-ai-seo-bulk',
+			[$this, 'render_seo_bulk_page']
+		);
+
+		// Product Description Generator.
+		add_submenu_page(
+			'rfs-ai',
+			__('Description Generator - Full Product Descriptions', 'rfs-ai-seo'),
+			__('Description Generator', 'rfs-ai-seo'),
+			'manage_options',
+			'rfs-ai-description-bulk',
+			[$this, 'render_description_bulk_page']
+		);
+
+		// Short Description Generator.
+		add_submenu_page(
+			'rfs-ai',
+			__('Short Description Generator - Product Summaries', 'rfs-ai-seo'),
+			__('Short Description Generator', 'rfs-ai-seo'),
+			'manage_options',
+			'rfs-ai-short-description-bulk',
+			[$this, 'render_short_description_bulk_page']
+		);
+
+		// Usage Statistics.
+		add_submenu_page(
+			'rfs-ai',
+			__('Usage Statistics - Track Token Usage & Costs', 'rfs-ai-seo'),
+			__('Usage Statistics', 'rfs-ai-seo'),
+			'manage_options',
+			'rfs-ai-stats',
 			[$this, 'render_stats_page']
 		);
 	}
@@ -132,11 +153,33 @@ class Admin {
 	}
 
 	/**
-	 * Render bulk generator page.
+	 * Render dashboard page.
 	 *
 	 * @return void
 	 */
-	public function render_bulk_page(): void {
+	public function render_dashboard_page(): void {
+		// Check user capabilities.
+		if (!current_user_can('manage_options')) {
+			wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'rfs-ai-seo'));
+		}
+
+		// Include dashboard page template.
+		if (file_exists(RFS_AI_SEO_PLUGIN_DIR . 'admin/views/dashboard-page.php')) {
+			include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/dashboard-page.php';
+		} else {
+			echo '<div class="wrap">';
+			echo '<h1>' . esc_html__('RFS AI Dashboard', 'rfs-ai-seo') . '</h1>';
+			echo '<p>' . esc_html__('Dashboard functionality coming soon...', 'rfs-ai-seo') . '</p>';
+			echo '</div>';
+		}
+	}
+
+	/**
+	 * Render SEO bulk generator page.
+	 *
+	 * @return void
+	 */
+	public function render_seo_bulk_page(): void {
 		// Check user capabilities.
 		if (!current_user_can('manage_options')) {
 			wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'rfs-ai-seo'));

@@ -12,7 +12,13 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap rfs-ai-seo-bulk-generator">
-	<h1><?php esc_html_e('Bulk Generate SEO Meta', 'rfs-ai-seo'); ?></h1>
+	<h1><?php esc_html_e('Bulk Generate SEO Meta Titles & Descriptions', 'rfs-ai-seo'); ?></h1>
+
+	<div class="rfs-bulk-intro" style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 15px 20px; margin: 20px 0; border-radius: 3px;">
+		<p style="margin: 0;">
+			<?php esc_html_e('Generate optimized SEO meta titles and descriptions for multiple products or categories at once. These meta tags improve your search engine visibility and click-through rates by providing compelling, keyword-rich previews in search results.', 'rfs-ai-seo'); ?>
+		</p>
+	</div>
 
 	<!-- Filters -->
 	<div class="rfs-ai-seo-bulk-filters">
