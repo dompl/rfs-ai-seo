@@ -228,23 +228,7 @@ final class RFS_AI_SEO {
 			return;
 		}
 
-		// Enqueue plugin-specific styling only on plugin pages.
-		if ($is_plugin_page) {
-			wp_enqueue_style(
-				'rfs-ai-plugin-style',
-				RFS_AI_SEO_PLUGIN_URL . 'admin/css/plugin-style.css',
-				[],
-				RFS_AI_SEO_VERSION
-			);
-		}
-
-		// Enqueue admin CSS.
-		wp_enqueue_style(
-			'rfs-ai-seo-admin',
-			RFS_AI_SEO_PLUGIN_URL . 'admin/css/admin.css',
-			[],
-			RFS_AI_SEO_VERSION
-		);
+		// No custom CSS - using default WordPress styling only.
 
 		// Enqueue admin JS.
 		wp_enqueue_script(
