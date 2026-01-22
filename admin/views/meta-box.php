@@ -138,10 +138,24 @@ if (!defined('ABSPATH')) {
 	<div class="rfs-description-preview" id="rfs_description_preview" style="display: none; background: #f6f7f7; padding: 15px; border-radius: 4px; margin-top: 10px;">
 		<h4 style="margin-top: 0;"><?php esc_html_e('Generated Description', 'rfs-ai-seo'); ?></h4>
 
+		<!-- HTML Preview -->
+		<div style="margin-bottom: 15px;">
+			<label style="font-weight: 600; display: block; margin-bottom: 5px;">
+				<?php esc_html_e('Preview (How it will look):', 'rfs-ai-seo'); ?>
+			</label>
+			<div id="rfs_description_html_preview" style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 15px; max-height: 300px; overflow-y: auto; line-height: 1.6;"></div>
+		</div>
+
+		<!-- HTML Source -->
+		<div style="margin-bottom: 10px;">
+			<label for="rfs_description_preview_text" style="font-weight: 600; display: block; margin-bottom: 5px;">
+				<?php esc_html_e('HTML Source (Editable):', 'rfs-ai-seo'); ?>
+			</label>
+		</div>
 		<textarea id="rfs_description_preview_text"
 				  class="widefat"
 				  rows="10"
-				  style="font-family: inherit; margin-bottom: 10px;"></textarea>
+				  style="font-family: monospace; margin-bottom: 10px;"></textarea>
 
 		<div style="margin-bottom: 10px;">
 			<span id="rfs_description_word_count" style="font-size: 12px; color: #666;"></span>

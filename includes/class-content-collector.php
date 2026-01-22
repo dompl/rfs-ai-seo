@@ -36,6 +36,7 @@ class Content_Collector {
 
 		return [
 			'product_name' => $product->get_name(),
+			'product_url' => get_permalink($product_id),
 			'product_description' => wp_strip_all_tags($product->get_description()),
 			'short_description' => wp_strip_all_tags($product->get_short_description()),
 			'sku' => $product->get_sku() ?: '',
@@ -49,6 +50,7 @@ class Content_Collector {
 			'stock_status' => $product->is_in_stock() ? __('In stock', 'rfs-ai-seo') : __('Out of stock', 'rfs-ai-seo'),
 			'average_rating' => $product->get_average_rating(),
 			'review_count' => $product->get_review_count(),
+			'similar_products' => $this->get_similar_products($product_id),
 			'acf_all' => '', // Will be populated by ACF handler if enabled.
 		];
 	}
@@ -253,5 +255,55 @@ class Content_Collector {
 		$parent = get_term($parent_id, 'product_cat');
 
 		return $parent && !is_wp_error($parent) ? $parent->name : '';
+	}
+
+	/**
+	 * Get similar products from same categories.
+	 *
+	 * @param int $product_id Current product ID.
+	 * @return string Formatted list of similar products with URLs.
+	 */
+	private function get_similar_products(int $product_id): string {
+		// Get product categories.
+		$terms = get_the_terms($product_id, 'product_cat');
+
+		if (!$terms || is_wp_error($terms)) {
+			return '';
+		}
+
+		// Get category IDs.
+		$category_ids = wp_list_pluck($terms, 'term_id');
+
+		// Query similar products.
+		$args = [
+			'post_type' => 'product',
+			'posts_per_page' => 8,
+			'post__not_in' => [$product_id],
+			'post_status' => 'publish',
+			'orderby' => 'rand',
+			'tax_query' => [
+				[
+					'taxonomy' => 'product_cat',
+					'field' => 'term_id',
+					'terms' => $category_ids,
+					'operator' => 'IN',
+				],
+			],
+		];
+
+		$query = new \WP_Query($args);
+
+		if (!$query->have_posts()) {
+			return '';
+		}
+
+		$similar = [];
+		while ($query->have_posts()) {
+			$query->the_post();
+			$similar[] = '- ' . get_the_title() . ': ' . get_permalink();
+		}
+		wp_reset_postdata();
+
+		return implode("\n", $similar);
 	}
 }

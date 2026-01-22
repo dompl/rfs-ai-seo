@@ -121,6 +121,7 @@ class Description_Generator {
 		// Add product data.
 		$prompt .= "PRODUCT DATA:\n";
 		$prompt .= "- Name: {$data['product_name']}\n";
+		$prompt .= "- Product URL: {$data['product_url']}\n";
 
 		if (!empty($data['product_description'])) {
 			$prompt .= "- Current Description: {$data['product_description']}\n";
@@ -142,16 +143,30 @@ class Description_Generator {
 			$prompt .= "- Additional Information: {$data['acf_all']}\n";
 		}
 
+		// Add similar products for linking.
+		if (!empty($data['similar_products'])) {
+			$prompt .= "\nSIMILAR PRODUCTS (for potential cross-linking):\n";
+			$prompt .= $data['similar_products'] . "\n";
+		}
+
 		$prompt .= "\nREQUIREMENTS:\n";
-		$prompt .= "- Create a detailed, engaging product description\n";
-		$prompt .= "- Highlight key features and benefits\n";
+		$prompt .= "- Create a detailed, engaging product description in HTML format\n";
+		$prompt .= "- Use proper HTML formatting:\n";
+		$prompt .= "  * <h2>, <h3>, <h4> for section headings\n";
+		$prompt .= "  * <strong> for bold/emphasis\n";
+		$prompt .= "  * <ul> and <li> for bullet point lists\n";
+		$prompt .= "  * <a href=\"URL\">text</a> for links to similar products (when relevant)\n";
+		$prompt .= "- Structure the content with clear sections (e.g., Overview, Key Features, Specifications, Applications)\n";
+		$prompt .= "- Highlight key features and benefits in bullet points\n";
 		$prompt .= "- Use the business context to maintain brand voice and style\n";
+		$prompt .= "- If similar products exist, naturally mention and link to 1-2 relevant ones where appropriate\n";
 		$prompt .= "- If a current description exists, improve upon it while keeping valuable details\n";
 		$prompt .= "- Make it SEO-friendly but natural-sounding\n";
-		$prompt .= "- Length: 150-300 words\n\n";
+		$prompt .= "- Length: 200-400 words\n";
+		$prompt .= "- DO NOT include opening/closing <p> tags or wrapping divs - just the content HTML\n\n";
 
 		$prompt .= "RESPOND IN JSON FORMAT ONLY:\n";
-		$prompt .= '{"description": "your product description here"}';
+		$prompt .= '{"description": "your HTML-formatted product description here"}';
 
 		return $prompt;
 	}

@@ -35,8 +35,11 @@
 			// Restore original description button
 			$('#rfs_restore_description_btn').on('click', () => this.restoreOriginal());
 
-			// Update word count on text change
-			$('#rfs_description_preview_text').on('input', () => this.updateWordCount());
+			// Update word count and HTML preview on text change
+			$('#rfs_description_preview_text').on('input', () => {
+				this.updateWordCount();
+				this.updateHtmlPreview();
+			});
 		},
 
 		/**
@@ -93,6 +96,9 @@
 			// Update word count
 			this.updateWordCount();
 
+			// Update HTML preview
+			this.updateHtmlPreview();
+
 			// Show token usage
 			if (data.tokens) {
 				const tokenInfo = `Tokens used: ${data.tokens.total} (${data.tokens.prompt} prompt + ${data.tokens.completion} completion)`;
@@ -109,6 +115,14 @@
 			const chars = text.length;
 
 			$('#rfs_description_word_count').text(`${words} words, ${chars} characters`);
+		},
+
+		/**
+		 * Update HTML preview
+		 */
+		updateHtmlPreview() {
+			const html = $('#rfs_description_preview_text').val();
+			$('#rfs_description_html_preview').html(html);
 		},
 
 		/**
@@ -173,6 +187,7 @@
 		cancelDescription() {
 			$('#rfs_description_preview').slideUp();
 			$('#rfs_description_preview_text').val('');
+			$('#rfs_description_html_preview').html('');
 			$('#rfs_description_token_info').text('');
 		},
 
