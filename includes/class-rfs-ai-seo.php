@@ -246,6 +246,14 @@ final class RFS_AI_SEO {
 				'2.2.1'
 			);
 
+			// Enqueue custom Tailwind overrides (load last).
+			wp_enqueue_style(
+				'rfs-ai-tailwind-custom',
+				RFS_AI_SEO_PLUGIN_URL . 'admin/css/tailwind-custom.css',
+				['rfs-ai-tailwind', 'rfs-ai-flowbite'],
+				RFS_AI_SEO_VERSION
+			);
+
 			// Enqueue Flowbite JS.
 			wp_enqueue_script(
 				'rfs-ai-flowbite',
