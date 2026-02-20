@@ -144,7 +144,7 @@
 					'<span style="color: #a7aaad;">—</span>';
 
 				tbody.append(`
-					<tr>
+					<tr data-item-id="${item.id}">
 						<th class="check-column">
 							<input type="checkbox" class="rfs-bulk-item-checkbox" value="${item.id}" data-name="${item.name}">
 						</th>
@@ -232,24 +232,14 @@
 		 */
 		startGeneration(allFiltered) {
 			let itemsToGenerate;
-			let message;
 
 			if (allFiltered) {
-				// Generate for all items
 				itemsToGenerate = this.items.map(item => item.id);
-				message = `Generate SEO meta for all ${itemsToGenerate.length} filtered items?`;
 			} else {
-				// Generate for selected
 				itemsToGenerate = this.selectedIds;
-				message = `Generate SEO meta for ${itemsToGenerate.length} selected items?`;
 			}
 
 			if (itemsToGenerate.length === 0) {
-				alert('No items to generate.');
-				return;
-			}
-
-			if (!confirm(message)) {
 				return;
 			}
 
@@ -298,6 +288,7 @@
 						this.results.success++;
 						this.results.tokens += response.data.tokens.total || 0;
 						this.logResult(itemName, true, 'Generated successfully');
+						this.updateItemRow(itemId, response.data);
 					} else {
 						this.results.failed++;
 						this.logResult(itemName, false, response.data.message || 'Unknown error');
@@ -309,7 +300,6 @@
 				},
 				complete: () => {
 					this.currentIndex++;
-					// Continue to next item
 					setTimeout(() => this.processNext(), 500);
 				}
 			});
@@ -359,6 +349,38 @@
 		},
 
 		/**
+		 * Update a table row after successful generation.
+		 */
+		updateItemRow(itemId, data) {
+			const $row = $('tr[data-item-id="' + itemId + '"]');
+			if (!$row.length) {
+				return;
+			}
+
+			// Update title column.
+			if (data.title) {
+				$row.find('.column-title').html(this.truncate(data.title, 50));
+			}
+
+			// Update description column.
+			if (data.description) {
+				$row.find('.column-description').html(this.truncate(data.description, 60));
+			}
+
+			// Update status dots to "complete".
+			$row.find('.column-status').html(this.getStatusDots('complete'));
+
+			// Uncheck the item.
+			$row.find('.rfs-bulk-item-checkbox').prop('checked', false);
+
+			// Brief highlight to draw attention.
+			$row.css('background-color', '#d4edda');
+			setTimeout(() => $row.css('background-color', ''), 2000);
+
+			this.updateSelection();
+		},
+
+		/**
 		 * Complete generation
 		 */
 		complete() {
@@ -373,9 +395,6 @@
 			// Show summary
 			$('#rfs_completion_summary').show();
 			$('#rfs_bulk_stop_btn').hide();
-
-			// Reload items to show updated status
-			this.loadItems();
 		},
 
 		/**
