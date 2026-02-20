@@ -1,8 +1,8 @@
 /**
  * RFS AI Bulk Image Generator
  *
- * Handles product filtering, image selection, sequential AI generation,
- * comparison panel with replace/skip flow, and completion summary.
+ * Individual image rows with sequential generation, comparison panel
+ * with replace/regenerate/skip flow, and inline status updates.
  *
  * @package RFS_AI_SEO
  */
@@ -13,7 +13,7 @@
 	const ImageBulkGenerator = {
 		// State.
 		items: [],
-		selectedProductIds: [],
+		selectedKeys: [],
 		imageQueue: [],
 		currentIndex: 0,
 		generatedAttachmentId: null,
@@ -21,7 +21,6 @@
 		results: { replaced: 0, skipped: 0, failed: 0 },
 		totalCost: 0,
 		totalProcessed: 0,
-		productResults: {}, // Per-product results keyed by product_id.
 
 		/**
 		 * Initialize.
@@ -34,27 +33,19 @@
 		 * Bind event handlers.
 		 */
 		bindEvents() {
-			// Filter button.
 			$('#rfs_image_bulk_filter_btn').on('click', () => this.loadItems());
 
-			// Select all checkboxes.
 			$('#rfs_image_bulk_select_all, #rfs_image_bulk_select_all_header').on('change', (e) => {
 				this.selectAll(e.target.checked);
 			});
 
-			// Individual checkbox change (delegated).
 			$(document).on('change', '.rfs-image-bulk-checkbox', () => this.updateSelection());
 
-			// Generate button.
 			$('#rfs_image_bulk_generate_selected').on('click', () => this.startGeneration());
 
-			// Stop button (in progress panel).
 			$('#rfs_image_bulk_stop_btn').on('click', () => this.stop());
-
-			// Stop Remaining button (in comparison panel, accessible when progress panel is hidden).
 			$('#rfs_image_comparison_stop_btn').on('click', () => this.stop());
 
-			// Close button.
 			$('#rfs_image_bulk_close_btn').on('click', () => this.closeProgress());
 
 			// Comparison tab switching.
@@ -67,11 +58,11 @@
 				$('#rfs_image_comparison_' + tab).addClass('active');
 			});
 
-			// Replace / Skip.
+			// Replace / Regenerate / Skip.
 			$('#rfs_image_replace_btn').on('click', () => this.replaceImage());
+			$('#rfs_image_regenerate_btn').on('click', () => this.regenerateImage());
 			$('#rfs_image_skip_btn').on('click', () => this.skipImage());
 
-			// Enter key in search.
 			$('#rfs_image_bulk_search').on('keypress', (e) => {
 				if (e.which === 13) {
 					this.loadItems();
@@ -80,7 +71,7 @@
 		},
 
 		/**
-		 * Load products with filters.
+		 * Load images with filters.
 		 */
 		loadItems() {
 			const filters = {
@@ -90,7 +81,7 @@
 			};
 
 			$('#rfs_image_bulk_items_tbody').html(
-				'<tr><td colspan="6" class="rfs-empty-state">Loading...</td></tr>'
+				'<tr><td colspan="5" class="rfs-empty-state">Loading...</td></tr>'
 			);
 
 			$.ajax({
@@ -105,7 +96,6 @@
 					if (response.success) {
 						this.items = response.data.items;
 						this.renderItems(response.data);
-						// Show settings panel only when items are loaded; hide when empty.
 						if (response.data.items.length > 0) {
 							$('#rfs_image_bulk_settings').show();
 						} else {
@@ -122,7 +112,7 @@
 		},
 
 		/**
-		 * Render items table.
+		 * Render items table — one row per image.
 		 */
 		renderItems(data) {
 			const tbody = $('#rfs_image_bulk_items_tbody');
@@ -130,8 +120,8 @@
 
 			if (data.items.length === 0) {
 				tbody.append(
-					'<tr><td colspan="6" class="rfs-empty-state">' +
-					(rfsAiImageBulk.strings.noItems || 'No products found with current filters.') +
+					'<tr><td colspan="5" class="rfs-empty-state">' +
+					(rfsAiImageBulk.strings.noItems || 'No images found with current filters.') +
 					'</td></tr>'
 				);
 				this.updateCounts();
@@ -140,50 +130,37 @@
 
 			data.items.forEach((item) => {
 				const thumbnail = item.thumbnail
-					? '<img src="' + item.thumbnail + '" alt="' + this.escHtml(item.name) + '">'
+					? '<img src="' + this.escHtml(item.thumbnail) + '" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">'
 					: '<span class="dashicons dashicons-format-image"></span>';
 
-				const imageBreakdown = this.getImageBreakdown(item);
-				const statusLabel = item.image_count > 0
-					? '<span class="rfs-status-badge rfs-status-has-images">' + item.image_count + ' image' + (item.image_count !== 1 ? 's' : '') + '</span>'
-					: '<span class="rfs-status-badge rfs-status-no-images">No images</span>';
+				const typeLabel = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+				const rowKey = item.attachment_id + '-' + item.product_id;
 
 				tbody.append(
-					'<tr data-product-id="' + item.id + '">' +
+					'<tr data-row-key="' + rowKey + '" data-attachment-id="' + item.attachment_id + '" data-product-id="' + item.product_id + '">' +
 						'<th class="check-column">' +
-							'<input type="checkbox" class="rfs-image-bulk-checkbox" value="' + item.id + '" data-name="' + this.escHtml(item.name) + '" data-image-count="' + item.image_count + '">' +
+							'<input type="checkbox" class="rfs-image-bulk-checkbox"' +
+								' value="' + rowKey + '"' +
+								' data-attachment-id="' + item.attachment_id + '"' +
+								' data-product-id="' + item.product_id + '"' +
+								' data-product-name="' + this.escHtml(item.product_name) + '"' +
+								' data-type="' + this.escHtml(item.type) + '"' +
+								' data-label="' + this.escHtml(item.label) + '"' +
+								' data-variation-id="' + (item.variation_id || 0) + '">' +
 						'</th>' +
 						'<td class="column-thumbnail">' + thumbnail + '</td>' +
 						'<td class="column-name">' +
-							'<a href="' + item.edit_url + '" target="_blank">' + this.escHtml(item.name) + '</a>' +
+							'<a href="' + item.edit_url + '" target="_blank">' + this.escHtml(item.product_name) + '</a>' +
 						'</td>' +
-						'<td class="column-images">' + imageBreakdown + '</td>' +
-						'<td class="column-status">' + statusLabel + '</td>' +
-						'<td class="column-result"></td>' +
+						'<td class="column-type">' + this.escHtml(typeLabel) + '</td>' +
+						'<td class="column-status"></td>' +
 					'</tr>'
 				);
 			});
 
 			this.updateCounts(data.total);
-			this.selectedProductIds = [];
+			this.selectedKeys = [];
 			this.updateSelection();
-		},
-
-		/**
-		 * Get image breakdown HTML.
-		 */
-		getImageBreakdown(item) {
-			const parts = [];
-			if (item.featured) {
-				parts.push('Featured');
-			}
-			if (item.gallery > 0) {
-				parts.push(item.gallery + ' gallery');
-			}
-			if (item.variations > 0) {
-				parts.push(item.variations + ' variation');
-			}
-			return parts.length > 0 ? parts.join(', ') : '<span style="color: #a7aaad;">None</span>';
 		},
 
 		/**
@@ -207,28 +184,22 @@
 		 * Update selection state.
 		 */
 		updateSelection() {
-			this.selectedProductIds = $('.rfs-image-bulk-checkbox:checked').map(function() {
+			this.selectedKeys = $('.rfs-image-bulk-checkbox:checked').map(function() {
 				return $(this).val();
 			}).get();
 
-			const count = this.selectedProductIds.length;
+			const count = this.selectedKeys.length;
 			$('#rfs_image_bulk_selected_count').text(
 				count > 0 ? 'Selected: ' + count : ''
 			);
 
-			// Calculate total images for selected products.
-			let totalImages = 0;
-			$('.rfs-image-bulk-checkbox:checked').each(function() {
-				totalImages += parseInt($(this).data('image-count')) || 0;
-			});
-
 			// Update cost estimate.
 			const sym = rfsAiImageBulk.currencySymbol || '$';
-			if (totalImages > 0) {
+			if (count > 0) {
 				const perImage = parseFloat(rfsAiImageBulk.imageCostEstimate) || 0;
-				const totalEst = (perImage * totalImages).toFixed(4);
+				const totalEst = (perImage * count).toFixed(4);
 				$('#rfs_image_bulk_cost_estimate').text(
-					'Est. cost: ' + sym + totalEst + ' (' + totalImages + ' images)'
+					'Est. cost: ' + sym + totalEst + ' (' + count + ' images)'
 				);
 			} else {
 				$('#rfs_image_bulk_cost_estimate').text('');
@@ -236,7 +207,6 @@
 
 			$('#rfs_image_bulk_generate_selected').prop('disabled', count === 0);
 
-			// Update select all checkbox state.
 			const totalCheckboxes = $('.rfs-image-bulk-checkbox').length;
 			const checkedCheckboxes = $('.rfs-image-bulk-checkbox:checked').length;
 			$('#rfs_image_bulk_select_all, #rfs_image_bulk_select_all_header').prop('checked',
@@ -249,7 +219,7 @@
 		 */
 		updateCounts(total) {
 			if (total !== undefined) {
-				$('#rfs_image_bulk_total_count').text('Total products: ' + total);
+				$('#rfs_image_bulk_total_count').text('Total images: ' + total);
 			} else {
 				$('#rfs_image_bulk_total_count').text('');
 			}
@@ -267,43 +237,56 @@
 		},
 
 		/**
-		 * Start generation.
+		 * Show an inline notice (replaces alert() for better visibility).
+		 */
+		showNotice(message, type) {
+			$('.rfs-bulk-notice').remove();
+			const cls = type === 'error' ? 'notice-error' : 'notice-warning';
+			const $notice = $(
+				'<div class="notice ' + cls + ' is-dismissible rfs-bulk-notice" style="margin: 10px 0;">' +
+					'<p>' + this.escHtml(message) + '</p>' +
+					'<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss</span></button>' +
+				'</div>'
+			);
+			$notice.find('.notice-dismiss').on('click', function() { $notice.remove(); });
+			$('#rfs_image_bulk_settings').before($notice);
+			$notice[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+		},
+
+		/**
+		 * Start generation — build queue from selected images.
 		 */
 		startGeneration() {
+			$('.rfs-bulk-notice').remove();
+
 			const settings = this.getPromptSettings();
 
 			if (!settings.prompt_template && !settings.custom_prompt) {
-				alert('Please select a prompt template or enter a custom prompt.');
+				this.showNotice('Please select a prompt template or enter a custom prompt.', 'error');
+				$('#rfs_image_bulk_prompt').focus();
 				return;
 			}
 
-			if (this.selectedProductIds.length === 0) {
+			if (this.selectedKeys.length === 0) {
 				return;
 			}
 
-			// Build image queue from selected products.
+			// Build image queue from selected checkboxes.
 			this.imageQueue = [];
-			this.selectedProductIds.forEach((productId) => {
-				const product = this.items.find(i => i.id == productId);
-				if (product && product.images) {
-					product.images.forEach((image) => {
-						this.imageQueue.push({
-							...image,
-							productName: product.name
-						});
-					});
-				}
+			$('.rfs-image-bulk-checkbox:checked').each((i, el) => {
+				const $el = $(el);
+				this.imageQueue.push({
+					attachment_id: parseInt($el.data('attachment-id'), 10),
+					product_id: parseInt($el.data('product-id'), 10),
+					product_name: $el.data('product-name'),
+					type: $el.data('type'),
+					label: $el.data('label'),
+					variation_id: parseInt($el.data('variation-id'), 10) || 0,
+					rowKey: $el.val()
+				});
 			});
 
 			if (this.imageQueue.length === 0) {
-				alert('No images found in selected products.');
-				return;
-			}
-
-			const message = 'Generate AI images for ' + this.imageQueue.length +
-				' image(s) across ' + this.selectedProductIds.length + ' product(s)?';
-
-			if (!confirm(message)) {
 				return;
 			}
 
@@ -313,10 +296,23 @@
 			this.results = { replaced: 0, skipped: 0, failed: 0 };
 			this.totalCost = 0;
 			this.totalProcessed = 0;
-			this.productResults = {};
+
+			// Disable the generate button and show loading state.
+			$('#rfs_image_bulk_generate_selected')
+				.prop('disabled', true)
+				.text(rfsAiImageBulk.strings.generating || 'Generating...');
+
+			// Mark all queued rows as pending with spinner.
+			this.imageQueue.forEach((item) => {
+				const $row = $('tr[data-row-key="' + item.rowKey + '"]');
+				$row.find('.column-status').html(
+					'<span class="spinner is-active" style="float: none; margin: 0; visibility: visible;"></span>'
+				);
+				$row.addClass('rfs-row-queued');
+			});
 
 			// Show progress panel, hide other panels.
-			$('#rfs_image_bulk_progress').show();
+			$('#rfs_image_bulk_progress').addClass('active').show();
 			$('#rfs_image_comparison_panel').hide();
 			$('#rfs_image_completion_summary').hide();
 			$('#rfs_image_progress_log').empty();
@@ -329,7 +325,9 @@
 			$('#rfs_image_progress_cost').text(sym + '0.0000');
 			$('#rfs_image_progress_bar').css('width', '0%');
 
-			// Start processing.
+			// Scroll progress panel into view.
+			$('#rfs_image_bulk_progress')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+
 			this.processNext();
 		},
 
@@ -346,19 +344,25 @@
 			const total = this.imageQueue.length;
 			const current = this.currentIndex + 1;
 			const pct = Math.round((this.currentIndex / total) * 100);
+			const itemLabel = item.product_name + ' (' + item.label + ')';
 
 			// Update progress.
 			$('#rfs_image_progress_bar').css('width', pct + '%');
-			$('#rfs_image_progress_current').text(
-				item.productName + ' - ' + item.label
-			);
-			$('#rfs_image_progress_count').text(
-				current + ' / ' + total + ' (' + pct + '%)'
-			);
+			$('#rfs_image_progress_current').text(itemLabel);
+			$('#rfs_image_progress_count').text(current + ' / ' + total + ' (' + pct + '%)');
 
 			// Show progress panel, hide comparison.
 			$('#rfs_image_bulk_progress').show();
 			$('#rfs_image_comparison_panel').hide();
+
+			// Highlight the current row being processed.
+			$('.rfs-row-processing').removeClass('rfs-row-processing');
+			const $currentRow = $('tr[data-row-key="' + item.rowKey + '"]');
+			$currentRow.addClass('rfs-row-processing');
+			$currentRow.find('.column-status').html(
+				'<span class="spinner is-active" style="float: none; margin: 0; visibility: visible;"></span>' +
+				' <span style="color: var(--rfs-primary); font-size: 12px;">Generating...</span>'
+			);
 
 			const settings = this.getPromptSettings();
 
@@ -368,7 +372,7 @@
 				data: {
 					action: 'rfs_ai_generate_product_image',
 					nonce: rfsAiImageBulk.nonce,
-					attachment_id: item.id,
+					attachment_id: item.attachment_id,
 					prompt_template: settings.prompt_template,
 					custom_prompt: settings.custom_prompt,
 					aspect_ratio: settings.aspect_ratio
@@ -376,37 +380,25 @@
 				success: (response) => {
 					if (response.success) {
 						const costInfo = response.data.cost_formatted ? ' (' + response.data.cost_formatted + ')' : '';
-						this.logEntry(
-							item.productName + ' - ' + item.label,
-							'success',
-							'Generated' + costInfo
-						);
+						this.logEntry(itemLabel, 'success', 'Generated' + costInfo);
 						this.generatedAttachmentId = response.data.new_attachment_id;
 						this.showComparison(item, response.data);
 					} else {
-						this.logEntry(
-							item.productName + ' - ' + item.label,
-							'error',
-							response.data.message || 'Generation failed'
-						);
+						this.logEntry(itemLabel, 'error', response.data.message || 'Generation failed');
 						this.results.failed++;
 						this.totalProcessed++;
 						this.updateStatCards();
-						this.recordProductResult(item.product_id, 'failed');
+						this.updateItemRow(item.rowKey, 'failed');
 						this.currentIndex++;
 						this.processNext();
 					}
 				},
 				error: () => {
-					this.logEntry(
-						item.productName + ' - ' + item.label,
-						'error',
-						'Network error'
-					);
+					this.logEntry(itemLabel, 'error', 'Network error');
 					this.results.failed++;
 					this.totalProcessed++;
 					this.updateStatCards();
-					this.recordProductResult(item.product_id, 'failed');
+					this.updateItemRow(item.rowKey, 'failed');
 					this.currentIndex++;
 					this.processNext();
 				}
@@ -429,7 +421,7 @@
 			$('#rfs_image_bulk_progress').hide();
 			$('#rfs_image_comparison_panel').show();
 
-			$('#rfs_image_comparison_product').text(item.productName);
+			$('#rfs_image_comparison_product').text(item.product_name);
 			$('#rfs_image_comparison_label').text(' - ' + item.label);
 			const costLabel = data.cost_formatted ? ' \u2014 ' + data.cost_formatted : '';
 			$('#rfs_image_comparison_counter').text('(' + current + '/' + total + ')' + costLabel);
@@ -442,9 +434,12 @@
 			$('.rfs-comparison-img').removeClass('active');
 			$('#rfs_image_comparison_generated').addClass('active');
 
-			// Store current item data for replace.
+			// Store current item data for replace/regenerate.
 			$('#rfs_image_comparison_panel').data('current-item', item);
 			$('#rfs_image_comparison_panel').data('new-attachment-id', data.new_attachment_id);
+
+			// Update stat cards with current cost.
+			this.updateStatCards();
 		},
 
 		/**
@@ -456,7 +451,7 @@
 			const newAttachmentId = $panel.data('new-attachment-id');
 
 			// Disable buttons during AJAX.
-			$('#rfs_image_replace_btn, #rfs_image_skip_btn').prop('disabled', true);
+			$('#rfs_image_replace_btn, #rfs_image_skip_btn, #rfs_image_regenerate_btn').prop('disabled', true);
 
 			let outcome = 'failed';
 			$.ajax({
@@ -467,45 +462,102 @@
 					nonce: rfsAiImageBulk.nonce,
 					image_type: item.type,
 					product_id: item.product_id,
-					old_attachment_id: item.id,
+					old_attachment_id: item.attachment_id,
 					new_attachment_id: newAttachmentId,
 					variation_id: item.variation_id || 0
 				},
 				success: (response) => {
 					if (response.success) {
-						this.logEntry(
-							item.productName + ' - ' + item.label,
-							'success',
-							'Replaced'
-						);
+						const itemLabel = item.product_name + ' (' + item.label + ')';
+						this.logEntry(itemLabel, 'success', 'Replaced');
 						this.results.replaced++;
 						outcome = 'replaced';
 					} else {
-						this.logEntry(
-							item.productName + ' - ' + item.label,
-							'error',
-							'Replace failed: ' + (response.data.message || 'Unknown error')
-						);
+						const itemLabel = item.product_name + ' (' + item.label + ')';
+						this.logEntry(itemLabel, 'error', 'Replace failed: ' + (response.data.message || 'Unknown error'));
 						this.results.failed++;
 					}
 				},
 				error: () => {
-					this.logEntry(
-						item.productName + ' - ' + item.label,
-						'error',
-						'Replace failed: Network error'
-					);
+					const itemLabel = item.product_name + ' (' + item.label + ')';
+					this.logEntry(itemLabel, 'error', 'Replace failed: Network error');
 					this.results.failed++;
 				},
 				complete: () => {
-					$('#rfs_image_replace_btn, #rfs_image_skip_btn').prop('disabled', false);
+					$('#rfs_image_replace_btn, #rfs_image_skip_btn, #rfs_image_regenerate_btn').prop('disabled', false);
 					$('#rfs_image_comparison_panel').hide();
 					$('#rfs_image_bulk_progress').show();
 					this.totalProcessed++;
 					this.updateStatCards();
-					this.recordProductResult(item.product_id, outcome);
+					this.updateItemRow(item.rowKey, outcome);
 					this.currentIndex++;
 					this.processNext();
+				}
+			});
+		},
+
+		/**
+		 * Regenerate image — call API again for a different version.
+		 */
+		regenerateImage() {
+			const $panel = $('#rfs_image_comparison_panel');
+			const item = $panel.data('current-item');
+			const itemLabel = item.product_name + ' (' + item.label + ')';
+
+			// Disable buttons during regeneration.
+			$('#rfs_image_replace_btn, #rfs_image_skip_btn, #rfs_image_regenerate_btn').prop('disabled', true);
+			$('#rfs_image_regenerate_btn').text('Regenerating...');
+
+			const settings = this.getPromptSettings();
+
+			$.ajax({
+				url: rfsAiImageBulk.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'rfs_ai_generate_product_image',
+					nonce: rfsAiImageBulk.nonce,
+					attachment_id: item.attachment_id,
+					prompt_template: settings.prompt_template,
+					custom_prompt: settings.custom_prompt,
+					aspect_ratio: settings.aspect_ratio
+				},
+				success: (response) => {
+					if (response.success) {
+						const costInfo = response.data.cost_formatted ? ' (' + response.data.cost_formatted + ')' : '';
+						this.logEntry(itemLabel, 'success', 'Regenerated' + costInfo);
+
+						// Track additional cost.
+						if (response.data.cost) {
+							this.totalCost += parseFloat(response.data.cost);
+						}
+
+						// Update comparison panel with new generated image.
+						$('#rfs_image_comparison_generated').attr('src', response.data.generated_url);
+						$panel.data('new-attachment-id', response.data.new_attachment_id);
+
+						// Update cost in counter.
+						const total = this.imageQueue.length;
+						const current = this.currentIndex + 1;
+						const costLabel = response.data.cost_formatted ? ' \u2014 ' + response.data.cost_formatted : '';
+						$('#rfs_image_comparison_counter').text('(' + current + '/' + total + ')' + costLabel);
+
+						// Switch to Generated tab.
+						$('.rfs-comparison-tab').removeClass('active');
+						$('.rfs-comparison-tab[data-tab="generated"]').addClass('active');
+						$('.rfs-comparison-img').removeClass('active');
+						$('#rfs_image_comparison_generated').addClass('active');
+
+						this.updateStatCards();
+					} else {
+						this.logEntry(itemLabel, 'error', 'Regeneration failed: ' + (response.data.message || 'Unknown error'));
+					}
+				},
+				error: () => {
+					this.logEntry(itemLabel, 'error', 'Regeneration failed: Network error');
+				},
+				complete: () => {
+					$('#rfs_image_replace_btn, #rfs_image_skip_btn, #rfs_image_regenerate_btn').prop('disabled', false);
+					$('#rfs_image_regenerate_btn').text('Regenerate');
 				}
 			});
 		},
@@ -515,20 +567,52 @@
 		 */
 		skipImage() {
 			const item = this.imageQueue[this.currentIndex];
-			this.logEntry(
-				item.productName + ' - ' + item.label,
-				'skipped',
-				'Skipped'
-			);
+			const itemLabel = item.product_name + ' (' + item.label + ')';
+			this.logEntry(itemLabel, 'skipped', 'Skipped');
 			this.results.skipped++;
 			this.totalProcessed++;
 			this.updateStatCards();
-			this.recordProductResult(item.product_id, 'skipped');
+			this.updateItemRow(item.rowKey, 'skipped');
 
 			$('#rfs_image_comparison_panel').hide();
 			$('#rfs_image_bulk_progress').show();
 			this.currentIndex++;
 			this.processNext();
+		},
+
+		/**
+		 * Update a table row after generation result.
+		 */
+		updateItemRow(rowKey, outcome) {
+			const $row = $('tr[data-row-key="' + rowKey + '"]');
+			if (!$row.length) {
+				return;
+			}
+
+			// Remove processing/queued classes.
+			$row.removeClass('rfs-row-processing rfs-row-queued');
+
+			// Uncheck the checkbox.
+			$row.find('.rfs-image-bulk-checkbox').prop('checked', false);
+
+			// Build status badge.
+			let statusHtml = '';
+			if (outcome === 'replaced') {
+				statusHtml = '<span class="rfs-status-badge rfs-status-has-images">Replaced</span>';
+			} else if (outcome === 'skipped') {
+				statusHtml = '<span class="rfs-status-badge" style="background:#fff3cd;color:#856404;">Skipped</span>';
+			} else if (outcome === 'failed') {
+				statusHtml = '<span class="rfs-status-badge rfs-status-no-images">Failed</span>';
+			}
+
+			$row.find('.column-status').html(statusHtml);
+
+			// Brief highlight.
+			const highlightColor = outcome === 'replaced' ? '#d4edda' : (outcome === 'failed' ? '#f8d7da' : '#fff3cd');
+			$row.css('background-color', highlightColor);
+			setTimeout(() => $row.css('background-color', ''), 2000);
+
+			this.updateSelection();
 		},
 
 		/**
@@ -546,11 +630,9 @@
 		 * Stop generation.
 		 */
 		stop() {
-			if (confirm('Stop bulk image generation?')) {
-				this.isRunning = false;
-				this.logEntry('---', 'skipped', 'Stopped by user');
-				this.complete();
-			}
+			this.isRunning = false;
+			this.logEntry('---', 'skipped', 'Stopped by user');
+			this.complete();
 		},
 
 		/**
@@ -565,6 +647,20 @@
 			// Hide progress and comparison panels.
 			$('#rfs_image_bulk_progress').hide();
 			$('#rfs_image_comparison_panel').hide();
+
+			// Reset generate button.
+			$('#rfs_image_bulk_generate_selected').text('Generate for Selected');
+			this.updateSelection();
+
+			// Clear any remaining queued/processing row states.
+			$('.rfs-row-queued, .rfs-row-processing').each(function() {
+				$(this).removeClass('rfs-row-queued rfs-row-processing');
+				const $status = $(this).find('.column-status');
+				// Only clear spinner if no outcome badge was set.
+				if ($status.find('.rfs-status-badge').length === 0) {
+					$status.html('');
+				}
+			});
 
 			// Update summary.
 			const sym = rfsAiImageBulk.currencySymbol || '$';
@@ -589,72 +685,21 @@
 		},
 
 		/**
-		 * Record a per-product image result and update the row when all images are done.
-		 */
-		recordProductResult(productId, outcome) {
-			if (!this.productResults[productId]) {
-				// Count how many images this product has in the queue.
-				const total = this.imageQueue.filter(i => i.product_id == productId).length;
-				this.productResults[productId] = { replaced: 0, skipped: 0, failed: 0, total: total, done: 0 };
-			}
-			const pr = this.productResults[productId];
-			pr[outcome]++;
-			pr.done++;
-
-			// Update row once all images for this product are processed.
-			if (pr.done >= pr.total) {
-				this.updateProductRow(productId, pr);
-			}
-		},
-
-		/**
-		 * Update a product's table row with generation results.
-		 */
-		updateProductRow(productId, pr) {
-			const $row = $('tr[data-product-id="' + productId + '"]');
-			if (!$row.length) {
-				return;
-			}
-
-			// Uncheck the checkbox.
-			$row.find('.rfs-image-bulk-checkbox').prop('checked', false);
-
-			// Build result badges.
-			const parts = [];
-			if (pr.replaced > 0) {
-				parts.push('<span class="rfs-status-badge rfs-status-has-images">' + pr.replaced + ' replaced</span>');
-			}
-			if (pr.skipped > 0) {
-				parts.push('<span class="rfs-status-badge" style="background:#fff3cd;color:#856404;">' + pr.skipped + ' skipped</span>');
-			}
-			if (pr.failed > 0) {
-				parts.push('<span class="rfs-status-badge rfs-status-no-images">' + pr.failed + ' failed</span>');
-			}
-
-			$row.find('.column-result').html(parts.join(' '));
-
-			// Update selection counts since checkbox changed.
-			this.updateSelection();
-		},
-
-		/**
 		 * Log entry.
 		 */
 		logEntry(label, type, message) {
 			const icon = type === 'success' ? '&#10003;' : (type === 'error' ? '&#10007;' : '&#8212;');
 			const cls = type === 'success' ? 'rfs-ai-seo-log-entry success'
-				: (type === 'error' ? 'rfs-ai-seo-log-entry error' : 'rfs-ai-seo-log-entry');
+				: (type === 'error' ? 'rfs-ai-seo-log-entry error' : 'rfs-ai-seo-log-entry skipped');
 			$('#rfs_image_progress_log').append(
-				'<div class="' + cls + '">' + icon + ' <strong>' + label + '</strong> &mdash; ' + message + '</div>'
+				'<div class="' + cls + '">' + icon + ' <strong>' + this.escHtml(label) + '</strong> &mdash; ' + message + '</div>'
 			);
 
-			// Auto-scroll.
 			var $log = $('#rfs_image_progress_log');
 			$log.scrollTop($log[0].scrollHeight);
 		}
 	};
 
-	// Initialize on document ready.
 	$(document).ready(() => ImageBulkGenerator.init());
 
 })(jQuery);

@@ -1768,7 +1768,9 @@ class Image_Generator {
 	}
 
 	/**
-	 * AJAX handler for getting products with image data for bulk image generator.
+	 * AJAX handler for getting individual images for bulk image generator.
+	 *
+	 * Returns a flat list of images (one row per image) instead of grouping by product.
 	 *
 	 * @return void
 	 */
@@ -1789,8 +1791,10 @@ class Image_Generator {
 		$args = [
 			'post_type'      => 'product',
 			'post_status'    => 'publish',
-			'posts_per_page' => 200,
+			'posts_per_page' => -1,
 			'fields'         => 'ids',
+			'orderby'        => 'title',
+			'order'          => 'ASC',
 		];
 
 		if ($category > 0) {
@@ -1818,38 +1822,31 @@ class Image_Generator {
 			}
 
 			$images = $this->get_product_images($product);
-			$image_count = count($images);
-			$featured_id = $product->get_image_id();
-			$gallery_count = count($product->get_gallery_image_ids());
-			$variation_count = 0;
+
+			// Skip products with no images if filter is 'has_images'.
+			if ($image_status === 'has_images' && empty($images)) {
+				continue;
+			}
+			// Skip products with images if filter is 'no_images'.
+			if ($image_status === 'no_images' && !empty($images)) {
+				continue;
+			}
+
+			$product_name = $product->get_name();
+			$edit_url = get_edit_post_link($product_id, 'raw');
 
 			foreach ($images as $img) {
-				if ($img['type'] === 'variation') {
-					$variation_count++;
-				}
+				$items[] = [
+					'attachment_id'  => $img['id'],
+					'product_id'     => $product_id,
+					'product_name'   => $product_name,
+					'edit_url'       => $edit_url,
+					'thumbnail'      => $img['thumbnail'],
+					'type'           => $img['type'],
+					'label'          => $img['label'],
+					'variation_id'   => $img['variation_id'] ?? 0,
+				];
 			}
-
-			// Filter by image status.
-			if ($image_status === 'no_images' && $image_count > 0) {
-				continue;
-			}
-			if ($image_status === 'has_images' && $image_count === 0) {
-				continue;
-			}
-
-			$thumbnail = $featured_id ? wp_get_attachment_image_url($featured_id, 'thumbnail') : '';
-
-			$items[] = [
-				'id'              => $product_id,
-				'name'            => $product->get_name(),
-				'edit_url'        => get_edit_post_link($product_id, 'raw'),
-				'thumbnail'       => $thumbnail ?: '',
-				'image_count'     => $image_count,
-				'featured'        => $featured_id ? 1 : 0,
-				'gallery'         => $gallery_count,
-				'variations'      => $variation_count,
-				'images'          => $images,
-			];
 		}
 
 		wp_send_json_success([

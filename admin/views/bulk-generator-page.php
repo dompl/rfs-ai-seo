@@ -78,7 +78,15 @@ if (!defined('ABSPATH')) {
 				<label for="rfs_bulk_select_all"><?php esc_html_e('Select All', 'rfs-ai-seo'); ?></label>
 				<span id="rfs_bulk_selected_count" style="margin-left: 10px;"></span>
 			</div>
-			<div class="alignright actions">
+			<div class="alignright actions" style="display: flex; align-items: center; gap: 16px;">
+				<label style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px;">
+					<input type="checkbox" id="rfs_bulk_overwrite_title">
+					<?php esc_html_e('Overwrite title if exists', 'rfs-ai-seo'); ?>
+				</label>
+				<label style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px;">
+					<input type="checkbox" id="rfs_bulk_overwrite_description">
+					<?php esc_html_e('Overwrite description if exists', 'rfs-ai-seo'); ?>
+				</label>
 				<button type="button" class="button button-primary" id="rfs_bulk_generate_selected" disabled>
 					<?php esc_html_e('Generate for Selected', 'rfs-ai-seo'); ?>
 				</button>

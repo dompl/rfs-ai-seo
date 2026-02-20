@@ -21,7 +21,7 @@ $cost_estimate = \RFS_AI_SEO\Image_Generator::estimate_cost_per_image($settings-
 
 	<div class="rfs-info-box">
 		<p>
-			<?php esc_html_e('Generate AI-powered product images for multiple products at once. Select products, choose a prompt template, and the AI will regenerate images based on your existing product photos.', 'rfs-ai-seo'); ?>
+			<?php esc_html_e('Generate AI-powered product images. Select individual images, choose a prompt template, and the AI will regenerate each image. You can compare, regenerate for a different version, or replace the original.', 'rfs-ai-seo'); ?>
 		</p>
 	</div>
 
@@ -142,15 +142,14 @@ $cost_estimate = \RFS_AI_SEO\Image_Generator::estimate_cost_per_image($settings-
 					<th class="check-column"><input type="checkbox" id="rfs_image_bulk_select_all_header"></th>
 					<th class="column-thumbnail"><?php esc_html_e('Image', 'rfs-ai-seo'); ?></th>
 					<th class="column-name"><?php esc_html_e('Product Name', 'rfs-ai-seo'); ?></th>
-					<th class="column-images"><?php esc_html_e('Images', 'rfs-ai-seo'); ?></th>
+					<th class="column-type"><?php esc_html_e('Type', 'rfs-ai-seo'); ?></th>
 					<th class="column-status"><?php esc_html_e('Status', 'rfs-ai-seo'); ?></th>
-					<th class="column-result"><?php esc_html_e('Result', 'rfs-ai-seo'); ?></th>
 				</tr>
 			</thead>
 			<tbody id="rfs_image_bulk_items_tbody">
 				<tr>
-					<td colspan="6" class="rfs-empty-state">
-						<?php esc_html_e('Click "Filter" to load products...', 'rfs-ai-seo'); ?>
+					<td colspan="5" class="rfs-empty-state">
+						<?php esc_html_e('Click "Filter" to load images...', 'rfs-ai-seo'); ?>
 					</td>
 				</tr>
 			</tbody>
@@ -257,6 +256,9 @@ $cost_estimate = \RFS_AI_SEO\Image_Generator::estimate_cost_per_image($settings-
 		<div class="rfs-comparison-actions">
 			<button type="button" class="button button-primary" id="rfs_image_replace_btn">
 				<?php esc_html_e('Replace', 'rfs-ai-seo'); ?>
+			</button>
+			<button type="button" class="button button-secondary" id="rfs_image_regenerate_btn">
+				<?php esc_html_e('Regenerate', 'rfs-ai-seo'); ?>
 			</button>
 			<button type="button" class="button button-secondary" id="rfs_image_skip_btn">
 				<?php esc_html_e('Skip', 'rfs-ai-seo'); ?>

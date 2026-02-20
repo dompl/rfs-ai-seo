@@ -281,13 +281,20 @@
 					action: 'rfs_ai_seo_bulk_generate',
 					nonce: rfsAiSeo.nonce,
 					object_id: itemId,
-					object_type: this.currentFilters.object_type
+					object_type: this.currentFilters.object_type,
+					overwrite_title: $('#rfs_bulk_overwrite_title').is(':checked') ? 1 : 0,
+					overwrite_description: $('#rfs_bulk_overwrite_description').is(':checked') ? 1 : 0
 				},
 				success: (response) => {
 					if (response.success) {
-						this.results.success++;
-						this.results.tokens += response.data.tokens.total || 0;
-						this.logResult(itemName, true, 'Generated successfully');
+						if (response.data.skipped) {
+							this.results.success++;
+							this.logResult(itemName, true, 'Skipped — existing meta preserved');
+						} else {
+							this.results.success++;
+							this.results.tokens += response.data.tokens.total || 0;
+							this.logResult(itemName, true, 'Generated successfully');
+						}
 						this.updateItemRow(itemId, response.data);
 					} else {
 						this.results.failed++;

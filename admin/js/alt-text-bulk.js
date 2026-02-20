@@ -9,7 +9,7 @@
 
 	const AltTextBulkGenerator = {
 		items: [],
-		selectedIds: [],
+		selectedKeys: [],
 		currentFilters: {},
 		isRunning: false,
 		currentIndex: 0,
@@ -88,7 +88,7 @@
 		},
 
 		/**
-		 * Render items table
+		 * Render items table — one row per image
 		 */
 		renderItems(data) {
 			const tbody = $('#rfs_alt_bulk_items_tbody');
@@ -98,7 +98,7 @@
 				tbody.append(`
 					<tr>
 						<td colspan="6" style="text-align: center; padding: 40px;">
-							${rfsAiAltText.strings.noItems || 'No products found with current filters.'}
+							${rfsAiAltText.strings.noItems || 'No images found with current filters.'}
 						</td>
 					</tr>
 				`);
@@ -108,37 +108,52 @@
 
 			data.items.forEach((item) => {
 				const thumbnail = item.thumbnail ?
-					`<img src="${item.thumbnail}" alt="${this.escapeHtml(item.name)}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">` :
-					'<span class="dashicons dashicons-products"></span>';
+					`<img src="${this.escapeHtml(item.thumbnail)}" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">` :
+					'<span class="dashicons dashicons-format-image"></span>';
 
-				let status;
-				if (item.missing_alt === 0) {
-					status = '<span style="color: #46b450;">&#10003; Complete</span>';
-				} else if (item.missing_alt === item.total_images) {
-					status = '<span style="color: #dc3232;">&#10005; All Missing</span>';
-				} else {
-					status = '<span style="color: #dba617;">&#9888; Partial</span>';
-				}
+				const altText = item.current_alt ?
+					this.truncate(item.current_alt, 60) :
+					'<span style="color: #a7aaad;">&mdash;</span>';
+
+				const status = item.has_alt ?
+					'<span style="color: #46b450;">&#10003; Has Alt</span>' :
+					'<span style="color: #dc3232;">&#10005; Missing</span>';
+
+				const typeLabel = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+
+				const rowKey = item.attachment_id + '-' + item.product_id;
 
 				tbody.append(`
-					<tr>
+					<tr data-row-key="${rowKey}" data-attachment-id="${item.attachment_id}" data-product-id="${item.product_id}">
 						<th class="check-column">
-							<input type="checkbox" class="rfs-alt-bulk-item-checkbox" value="${item.id}" data-name="${this.escapeHtml(item.name)}">
+							<input type="checkbox" class="rfs-alt-bulk-item-checkbox"
+								value="${rowKey}"
+								data-attachment-id="${item.attachment_id}"
+								data-product-id="${item.product_id}"
+								data-product-name="${this.escapeHtml(item.product_name)}"
+								data-type="${this.escapeHtml(item.type)}">
 						</th>
 						<td class="column-thumbnail">${thumbnail}</td>
 						<td class="column-name">
-							<a href="${item.edit_url}" target="_blank">${this.escapeHtml(item.name)}</a>
+							<a href="${item.edit_url}" target="_blank">${this.escapeHtml(item.product_name)}</a>
 						</td>
-						<td class="column-total-images">${item.total_images}</td>
-						<td class="column-missing-alt">${item.missing_alt}</td>
+						<td class="column-type">${this.escapeHtml(typeLabel)}</td>
+						<td class="column-alt-text">${altText}</td>
 						<td class="column-status">${status}</td>
 					</tr>
 				`);
 			});
 
 			this.updateCounts(data.total);
-			this.selectedIds = [];
+			this.selectedKeys = [];
 			this.updateSelection();
+		},
+
+		/**
+		 * Truncate text
+		 */
+		truncate(text, length) {
+			return text.length > length ? text.substring(0, length) + '...' : text;
 		},
 
 		/**
@@ -162,11 +177,11 @@
 		 * Update selection state
 		 */
 		updateSelection() {
-			this.selectedIds = $('.rfs-alt-bulk-item-checkbox:checked').map(function() {
+			this.selectedKeys = $('.rfs-alt-bulk-item-checkbox:checked').map(function() {
 				return $(this).val();
 			}).get();
 
-			const count = this.selectedIds.length;
+			const count = this.selectedKeys.length;
 			$('#rfs_alt_bulk_selected_count').text(
 				count > 0 ? `Selected: ${count}` : ''
 			);
@@ -186,54 +201,53 @@
 		 */
 		updateCounts(total) {
 			if (total !== undefined) {
-				$('#rfs_alt_bulk_total_count').text(`Total products: ${total}`);
+				$('#rfs_alt_bulk_total_count').text(`Total images: ${total}`);
 			} else {
 				$('#rfs_alt_bulk_total_count').text('');
 			}
 		},
 
 		/**
-		 * Start generation — flatten products into individual image tasks.
+		 * Start generation — build queue from selected images.
 		 */
 		startGeneration(allFiltered) {
-			let productIds;
+			this.imageQueue = [];
+			const overwrite = $('#rfs_alt_bulk_overwrite').is(':checked');
 
 			if (allFiltered) {
-				productIds = this.items.map(item => item.id);
-			} else {
-				productIds = this.selectedIds.map(id => parseInt(id, 10));
-			}
-
-			if (productIds.length === 0) {
-				alert('No products selected.');
-				return;
-			}
-
-			// Flatten into image queue: each entry = { attachment_id, product_id, productName }.
-			this.imageQueue = [];
-			productIds.forEach(pid => {
-				const item = this.items.find(i => i.id === pid || i.id === String(pid));
-				if (!item || !item.images) return;
-
-				item.images.forEach(img => {
-					if (!img.has_alt) {
+				this.items.forEach(item => {
+					if (overwrite || !item.has_alt) {
 						this.imageQueue.push({
-							attachment_id: img.attachment_id,
-							product_id: item.id,
-							productName: item.name,
-							imageType: img.type
+							attachment_id: item.attachment_id,
+							product_id: item.product_id,
+							productName: item.product_name,
+							imageType: item.type,
+							rowKey: item.attachment_id + '-' + item.product_id
 						});
 					}
 				});
-			});
+			} else {
+				$('.rfs-alt-bulk-item-checkbox:checked').each((i, el) => {
+					const $el = $(el);
+					const attachmentId = parseInt($el.data('attachment-id'), 10);
+					const productId = parseInt($el.data('product-id'), 10);
+					const item = this.items.find(it =>
+						it.attachment_id === attachmentId && it.product_id === productId
+					);
 
-			if (this.imageQueue.length === 0) {
-				alert('No images missing alt text in the selected products.');
-				return;
+					if (item && (overwrite || !item.has_alt)) {
+						this.imageQueue.push({
+							attachment_id: attachmentId,
+							product_id: productId,
+							productName: $el.data('product-name'),
+							imageType: $el.data('type'),
+							rowKey: attachmentId + '-' + productId
+						});
+					}
+				});
 			}
 
-			const message = `Generate alt text for ${this.imageQueue.length} images across ${productIds.length} products?`;
-			if (!confirm(message)) {
+			if (this.imageQueue.length === 0) {
 				return;
 			}
 
@@ -275,7 +289,8 @@
 					if (response.success) {
 						this.results.success++;
 						this.results.tokens += response.data.tokens.total || 0;
-						this.logResult(label, true, 'Generated successfully');
+						this.logResult(label, true, response.data.alt_text || 'Generated successfully');
+						this.updateItemRow(task.rowKey, response.data.alt_text);
 					} else {
 						this.results.failed++;
 						this.logResult(label, false, response.data.message || 'Unknown error');
@@ -290,6 +305,45 @@
 					setTimeout(() => this.processNext(), 500);
 				}
 			});
+		},
+
+		/**
+		 * Update a table row after successful generation.
+		 */
+		updateItemRow(rowKey, altText) {
+			const $row = $('tr[data-row-key="' + rowKey + '"]');
+			if (!$row.length) {
+				return;
+			}
+
+			// Update alt text column.
+			if (altText) {
+				$row.find('.column-alt-text').html(this.truncate(altText, 60));
+			}
+
+			// Update status to complete.
+			$row.find('.column-status').html('<span style="color: #46b450;">&#10003; Has Alt</span>');
+
+			// Uncheck the item.
+			$row.find('.rfs-alt-bulk-item-checkbox').prop('checked', false);
+
+			// Update the item in our local data.
+			const parts = rowKey.split('-');
+			const attachmentId = parseInt(parts[0], 10);
+			const productId = parseInt(parts[1], 10);
+			const item = this.items.find(it =>
+				it.attachment_id === attachmentId && it.product_id === productId
+			);
+			if (item) {
+				item.current_alt = altText;
+				item.has_alt = true;
+			}
+
+			// Brief highlight.
+			$row.css('background-color', '#d4edda');
+			setTimeout(() => $row.css('background-color', ''), 2000);
+
+			this.updateSelection();
 		},
 
 		/**
@@ -327,11 +381,9 @@
 		 * Stop generation
 		 */
 		stop() {
-			if (confirm('Stop bulk generation?')) {
-				this.isRunning = false;
-				this.logResult('System', false, 'Generation stopped by user');
-				this.complete();
-			}
+			this.isRunning = false;
+			this.logResult('System', false, 'Generation stopped by user');
+			this.complete();
 		},
 
 		/**
@@ -347,8 +399,6 @@
 
 			$('#rfs_alt_completion_summary').show();
 			$('#rfs_alt_bulk_stop_btn').hide();
-
-			this.loadItems();
 		},
 
 		/**

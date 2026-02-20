@@ -318,7 +318,9 @@ class Alt_Text_Generator {
 	}
 
 	/**
-	 * AJAX handler: get products with image alt text status for bulk table.
+	 * AJAX handler: get individual images with alt text status for bulk table.
+	 *
+	 * Returns a flat list of images (one row per image) instead of grouping by product.
 	 *
 	 * @return void
 	 */
@@ -337,8 +339,7 @@ class Alt_Text_Generator {
 
 		$args = [
 			'post_type'      => 'product',
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
+			'posts_per_page' => -1,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
 			'post_status'    => 'publish',
@@ -365,56 +366,44 @@ class Alt_Text_Generator {
 			while ($query->have_posts()) {
 				$query->the_post();
 				$product_id = get_the_ID();
+				$product_name = get_the_title();
+				$edit_url = get_edit_post_link($product_id);
 
 				$product_images = $this->get_product_images($product_id);
-				$total_images = count($product_images);
 
-				if ($total_images === 0) {
-					continue;
-				}
-
-				$missing_alt = 0;
-				$image_list = [];
 				foreach ($product_images as $img) {
-					if (!$img['has_alt']) {
-						$missing_alt++;
+					// Filter by alt text status.
+					if ($status === 'missing_alt' && $img['has_alt']) {
+						continue;
 					}
-					$image_list[] = [
+					if ($status === 'has_alt' && !$img['has_alt']) {
+						continue;
+					}
+
+					$items[] = [
 						'attachment_id' => $img['attachment_id'],
-						'type'          => $img['type'],
+						'product_id'    => $product_id,
+						'product_name'  => $product_name,
+						'edit_url'      => $edit_url,
 						'thumbnail'     => $img['thumbnail'],
+						'type'          => $img['type'],
 						'current_alt'   => $img['current_alt'],
 						'has_alt'       => $img['has_alt'],
 					];
 				}
-
-				// Filter by status.
-				if ($status === 'missing_alt' && $missing_alt === 0) {
-					continue;
-				}
-				if ($status === 'has_alt' && $missing_alt > 0) {
-					continue;
-				}
-
-				$thumbnail = get_the_post_thumbnail_url($product_id, 'thumbnail');
-
-				$items[] = [
-					'id'            => $product_id,
-					'name'          => get_the_title(),
-					'edit_url'      => get_edit_post_link($product_id),
-					'thumbnail'     => $thumbnail ?: '',
-					'total_images'  => $total_images,
-					'missing_alt'   => $missing_alt,
-					'images'        => $image_list,
-				];
 			}
 
 			wp_reset_postdata();
 		}
 
+		// Apply pagination to the flat list.
+		$total = count($items);
+		$offset = ($page - 1) * $per_page;
+		$items = array_slice($items, $offset, $per_page);
+
 		wp_send_json_success([
 			'items' => $items,
-			'total' => count($items),
+			'total' => $total,
 		]);
 	}
 

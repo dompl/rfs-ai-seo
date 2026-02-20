@@ -350,10 +350,29 @@ class Bulk_Generator {
 		// Get parameters.
 		$object_id = isset($_POST['object_id']) ? absint($_POST['object_id']) : 0;
 		$object_type = isset($_POST['object_type']) ? sanitize_text_field($_POST['object_type']) : 'product';
+		$overwrite_title = !empty($_POST['overwrite_title']);
+		$overwrite_description = !empty($_POST['overwrite_description']);
 
 		if (!$object_id) {
 			wp_send_json_error([
 				'message' => __('Invalid object ID.', 'rfs-ai-seo'),
+			]);
+		}
+
+		// Check existing meta to decide what to save.
+		$yoast = new Yoast_Integration();
+		$existing_meta = $yoast->get_meta($object_id, $object_type);
+		$has_existing_title = !empty($existing_meta['title']);
+		$has_existing_description = !empty($existing_meta['description']);
+
+		// Skip entirely if both exist and neither overwrite is checked.
+		if ($has_existing_title && !$overwrite_title && $has_existing_description && !$overwrite_description) {
+			wp_send_json_success([
+				'message' => __('Skipped — both title and description already exist.', 'rfs-ai-seo'),
+				'title' => $existing_meta['title'],
+				'description' => $existing_meta['description'],
+				'tokens' => ['prompt' => 0, 'completion' => 0, 'total' => 0],
+				'skipped' => true,
 			]);
 		}
 
@@ -367,9 +386,19 @@ class Bulk_Generator {
 			]);
 		}
 
+		// Determine which values to save.
+		$title_to_save = $result['title'];
+		$description_to_save = $result['description'];
+
+		if ($has_existing_title && !$overwrite_title) {
+			$title_to_save = $existing_meta['title'];
+		}
+		if ($has_existing_description && !$overwrite_description) {
+			$description_to_save = $existing_meta['description'];
+		}
+
 		// Auto-save to Yoast.
-		$yoast = new Yoast_Integration();
-		$saved = $yoast->save_meta($object_id, $object_type, $result['title'], $result['description']);
+		$saved = $yoast->save_meta($object_id, $object_type, $title_to_save, $description_to_save);
 
 		if (!$saved) {
 			wp_send_json_error([
@@ -377,11 +406,11 @@ class Bulk_Generator {
 			]);
 		}
 
-		// Return success with data.
+		// Return success with the saved data.
 		wp_send_json_success([
 			'message' => __('Meta generated and saved successfully.', 'rfs-ai-seo'),
-			'title' => $result['title'],
-			'description' => $result['description'],
+			'title' => $title_to_save,
+			'description' => $description_to_save,
 			'tokens' => $result['tokens'],
 		]);
 	}
