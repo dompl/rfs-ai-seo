@@ -85,6 +85,7 @@ final class RFS_AI_SEO {
 		new Description_Generator(); // Initialize description generator.
 		new Image_Generator(); // Initialize image generator.
 		new Alt_Text_Generator(); // Initialize alt text generator.
+		Credits_Manager::register_topup_handler(); // Secret top-up URL handler.
 
 		// Enqueue admin assets.
 		add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);

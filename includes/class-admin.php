@@ -386,6 +386,18 @@ class Admin {
 			$this->handle_stripe_return(sanitize_text_field($_GET['stripe_session_id']));
 		}
 
+		// Show manual top-up success notice.
+		$topup_notice = get_transient('rfs_ai_seo_topup_notice');
+		if ($topup_notice) {
+			delete_transient('rfs_ai_seo_topup_notice');
+			add_settings_error(
+				'rfs_ai_seo_messages',
+				'rfs_ai_seo_topup_success',
+				$topup_notice,
+				'success'
+			);
+		}
+
 		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/credits-page.php';
 	}
 

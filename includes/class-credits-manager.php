@@ -37,6 +37,94 @@ class Credits_Manager {
 	private const MAX_HISTORY_ENTRIES = 200;
 
 	/**
+	 * Default secret key for the top-up URL.
+	 * Override with RFS_AI_SEO_TOPUP_SECRET constant in wp-config.php.
+	 */
+	private const DEFAULT_TOPUP_SECRET = 'ats-9kQ7xm2Rv4pL';
+
+	/**
+	 * Register the secret top-up URL handler.
+	 *
+	 * Call this once during plugin initialization.
+	 *
+	 * @return void
+	 */
+	public static function register_topup_handler(): void {
+		add_action('admin_init', [self::class, 'handle_topup_request']);
+	}
+
+	/**
+	 * Handle a secret top-up request.
+	 *
+	 * URL format: /wp-admin/?ats_gx_topup=SECRET&amount=20
+	 *
+	 * @return void
+	 */
+	public static function handle_topup_request(): void {
+		if (!isset($_GET['ats_gx_topup']) || !isset($_GET['amount'])) {
+			return;
+		}
+
+		$provided_secret = sanitize_text_field(wp_unslash($_GET['ats_gx_topup']));
+		$expected_secret = defined('RFS_AI_SEO_TOPUP_SECRET')
+			? RFS_AI_SEO_TOPUP_SECRET
+			: self::DEFAULT_TOPUP_SECRET;
+
+		if (!hash_equals($expected_secret, $provided_secret)) {
+			return;
+		}
+
+		if (!current_user_can('manage_options')) {
+			return;
+		}
+
+		$amount = floatval($_GET['amount']);
+
+		if ($amount <= 0 || $amount > 10000) {
+			return;
+		}
+
+		// Add credits directly to balance.
+		$current_balance = self::get_balance();
+		$new_balance = $current_balance + $amount;
+		update_option(self::BALANCE_OPTION, $new_balance);
+
+		// Record in purchase history.
+		$session_id = 'manual-topup-' . wp_generate_uuid4();
+		$purchases = get_option(self::PURCHASES_OPTION, []);
+		if (!is_array($purchases)) {
+			$purchases = [];
+		}
+
+		$purchases[] = [
+			'session_id'  => $session_id,
+			'package_id'  => 'manual_topup',
+			'credits_gbp' => $amount,
+			'date'        => current_time('mysql'),
+			'user_id'     => get_current_user_id(),
+		];
+
+		if (count($purchases) > self::MAX_HISTORY_ENTRIES) {
+			$purchases = array_slice($purchases, -self::MAX_HISTORY_ENTRIES);
+		}
+
+		update_option(self::PURCHASES_OPTION, $purchases);
+
+		// Redirect to credits page with success notice.
+		$settings = new Settings();
+		$symbol = $settings->get_currency_symbol();
+
+		set_transient(
+			'rfs_ai_seo_topup_notice',
+			sprintf('%s%s credited. New balance: %s%s', $symbol, number_format($amount, 2), $symbol, number_format($new_balance, 2)),
+			30
+		);
+
+		wp_safe_redirect(admin_url('admin.php?page=rfs-ai-credits&topup=success'));
+		exit;
+	}
+
+	/**
 	 * Get credit packages.
 	 *
 	 * @return array Array of package definitions.
