@@ -15,6 +15,9 @@ if (!defined('ABSPATH')) {
 	<h1><?php esc_html_e('Usage Statistics', 'rfs-ai-seo'); ?></h1>
 
 	<?php
+	// Get settings for currency formatting.
+	$settings = new \RFS_AI_SEO\Settings();
+
 	// Check spending cap status.
 	$cap_status = $logger->check_spending_cap();
 	if ($cap_status['cap'] > 0) :
@@ -28,10 +31,10 @@ if (!defined('ABSPATH')) {
 				<?php
 				printf(
 					/* translators: 1: Current spending, 2: Cap limit, 3: Remaining */
-					esc_html__('$%.2f of $%.2f used this month ($%.2f remaining)', 'rfs-ai-seo'),
-					$cap_status['current_cost'],
-					$cap_status['cap'],
-					$cap_status['remaining']
+					esc_html__('%1$s of %2$s used this month (%3$s remaining)', 'rfs-ai-seo'),
+					esc_html($settings->format_cost($cap_status['current_cost'])),
+					esc_html($settings->format_cost($cap_status['cap'])),
+					esc_html($settings->format_cost($cap_status['remaining']))
 				);
 				?>
 			</p>
@@ -54,7 +57,7 @@ if (!defined('ABSPATH')) {
 		</div>
 
 		<div class="rfs-ai-seo-stat-card">
-			<div class="number">$<?php echo esc_html(number_format($stats['estimated_cost'], 2)); ?></div>
+			<div class="number"><?php echo esc_html($settings->format_cost($stats['estimated_cost'])); ?></div>
 			<div class="label"><?php esc_html_e('Estimated cost this month', 'rfs-ai-seo'); ?></div>
 		</div>
 
@@ -67,11 +70,16 @@ if (!defined('ABSPATH')) {
 			<div class="number"><?php echo esc_html(number_format($stats['by_type']['product_cat'])); ?></div>
 			<div class="label"><?php esc_html_e('Categories generated', 'rfs-ai-seo'); ?></div>
 		</div>
+
+		<div class="rfs-ai-seo-stat-card">
+			<div class="number"><?php echo esc_html(number_format($stats['by_type']['image_generation'])); ?></div>
+			<div class="label"><?php esc_html_e('Images generated', 'rfs-ai-seo'); ?></div>
+		</div>
 	</div>
 
 	<!-- Export Button -->
-	<div style="margin: 20px 0;">
-		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display: inline-block;">
+	<div class="rfs-export-form">
+		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
 			<input type="hidden" name="action" value="rfs_ai_seo_export_csv">
 			<?php wp_nonce_field('rfs_ai_seo_export_csv', 'rfs_ai_seo_export_nonce'); ?>
 
@@ -105,7 +113,7 @@ if (!defined('ABSPATH')) {
 		<tbody>
 			<?php if (empty($recent_logs)) : ?>
 				<tr>
-					<td colspan="7" style="text-align: center; padding: 40px;">
+					<td colspan="7" class="rfs-empty-state">
 						<?php esc_html_e('No generation logs found.', 'rfs-ai-seo'); ?>
 					</td>
 				</tr>
@@ -119,6 +127,7 @@ if (!defined('ABSPATH')) {
 								'product' => __('Product', 'rfs-ai-seo'),
 								'product_variation' => __('Variation', 'rfs-ai-seo'),
 								'product_cat' => __('Category', 'rfs-ai-seo'),
+								'image_generation' => __('Image', 'rfs-ai-seo'),
 							];
 							echo esc_html($type_labels[$log['object_type']] ?? $log['object_type']);
 							?>
@@ -145,60 +154,10 @@ if (!defined('ABSPATH')) {
 								<?php echo esc_html($log['model']); ?>
 							</span>
 						</td>
-						<td>$<?php echo esc_html(number_format($log['estimated_cost'], 4)); ?></td>
+						<td><?php echo esc_html($settings->format_cost($log['estimated_cost'], 4)); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			<?php endif; ?>
 		</tbody>
 	</table>
 </div>
-
-<style>
-.rfs-ai-seo-stats-cards {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-	gap: 20px;
-	margin: 20px 0;
-}
-
-.rfs-ai-seo-stat-card {
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-radius: 4px;
-	padding: 20px;
-	text-align: center;
-	box-shadow: 0 1px 1px rgba(0,0,0,.04);
-}
-
-.rfs-ai-seo-stat-card .number {
-	font-size: 32px;
-	font-weight: 600;
-	color: #1d2327;
-	line-height: 1.2;
-	margin-bottom: 8px;
-}
-
-.rfs-ai-seo-stat-card .label {
-	color: #50575e;
-	font-size: 13px;
-}
-
-.rfs-model-badge {
-	display: inline-block;
-	padding: 3px 8px;
-	border-radius: 3px;
-	font-size: 11px;
-	font-weight: 600;
-	text-transform: uppercase;
-}
-
-.rfs-model-gpt-4o {
-	background: #e3f2fd;
-	color: #1976d2;
-}
-
-.rfs-model-gpt-4o-mini {
-	background: #f3e5f5;
-	color: #7b1fa2;
-}
-</style>

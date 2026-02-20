@@ -56,35 +56,3 @@ $business_context = get_option('rfs_ai_trainer_business_context', '');
 		</form>
 	</div>
 </div>
-
-<style>
-.rfs-ai-trainer-container {
-	max-width: 900px;
-	background: #fff;
-	padding: 20px;
-	margin-top: 20px;
-	border: 1px solid #c3c4c7;
-	border-radius: 4px;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
-}
-
-.rfs-trainer-intro {
-	background: #f0f6fc;
-	border-left: 4px solid #2271b1;
-	padding: 15px 20px;
-	margin-bottom: 25px;
-	border-radius: 3px;
-}
-
-.rfs-trainer-intro p {
-	margin: 0;
-	color: #1d2327;
-	font-size: 14px;
-}
-
-#rfs_ai_trainer_business_context {
-	font-family: Consolas, Monaco, monospace;
-	font-size: 13px;
-	line-height: 1.6;
-}
-</style>

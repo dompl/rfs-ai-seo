@@ -85,7 +85,7 @@ if (!defined('ABSPATH')) {
 		</div>
 
 		<!-- Token Usage -->
-		<p class="rfs-ai-seo-token-info" id="rfs_ai_seo_token_info" style="font-size: 11px; color: #666; margin-top: 10px;"></p>
+		<p class="rfs-ai-seo-token-info" id="rfs_ai_seo_token_info"></p>
 	</div>
 
 	<!-- Hidden field to store object ID -->
@@ -94,72 +94,69 @@ if (!defined('ABSPATH')) {
 	<input type="hidden" id="rfs_ai_seo_title_max" value="<?php echo esc_attr($title_max); ?>">
 	<input type="hidden" id="rfs_ai_seo_desc_max" value="<?php echo esc_attr($desc_max); ?>">
 
-	<hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+	<hr>
 
 	<!-- Product Description Section -->
-	<h4 style="margin: 15px 0 10px 0;"><?php esc_html_e('Product Description', 'rfs-ai-seo'); ?></h4>
+	<h4 class="rfs-section-title"><?php esc_html_e('Product Description', 'rfs-ai-seo'); ?></h4>
 
 	<!-- Current Description Status -->
-	<div class="rfs-description-status" style="margin-bottom: 15px;">
-		<p style="margin: 5px 0; font-size: 12px;">
+	<div class="rfs-description-status">
+		<p>
 			<strong><?php esc_html_e('Current Description:', 'rfs-ai-seo'); ?></strong>
 			<?php if (!empty($current_description)): ?>
-				<span style="color: #46b450;">✓ <?php esc_html_e('Set', 'rfs-ai-seo'); ?></span>
-				<span style="color: #666;">(<?php echo esc_html(str_word_count($current_description)); ?> <?php esc_html_e('words', 'rfs-ai-seo'); ?>)</span>
+				<span class="rfs-status-set"><?php echo esc_html("\xE2\x9C\x93"); ?> <?php esc_html_e('Set', 'rfs-ai-seo'); ?></span>
+				<span class="rfs-status-word-count">(<?php echo esc_html(str_word_count(wp_strip_all_tags($current_description))); ?> <?php esc_html_e('words', 'rfs-ai-seo'); ?>)</span>
 			<?php else: ?>
-				<span style="color: #dc3232;">✗ <?php esc_html_e('Empty', 'rfs-ai-seo'); ?></span>
+				<span class="rfs-status-empty"><?php echo esc_html("\xE2\x9C\x97"); ?> <?php esc_html_e('Empty', 'rfs-ai-seo'); ?></span>
 			<?php endif; ?>
 		</p>
 
 		<?php if ($has_original): ?>
-			<p style="margin: 5px 0; font-size: 12px; padding: 5px; background: #fff3cd; border-left: 3px solid #ffc107;">
+			<div class="rfs-backup-notice">
 				<strong><?php esc_html_e('Original Backup:', 'rfs-ai-seo'); ?></strong>
 				<?php esc_html_e('Available', 'rfs-ai-seo'); ?>
 				<?php if ($original_saved_at): ?>
-					<span style="color: #666;">(<?php echo esc_html(human_time_diff(strtotime($original_saved_at), current_time('timestamp'))); ?> <?php esc_html_e('ago', 'rfs-ai-seo'); ?>)</span>
+					<span class="rfs-backup-time">(<?php echo esc_html(human_time_diff(strtotime($original_saved_at), current_time('timestamp'))); ?> <?php esc_html_e('ago', 'rfs-ai-seo'); ?>)</span>
 				<?php endif; ?>
 				<br>
-				<button type="button" class="button button-small" id="rfs_restore_description_btn" style="margin-top: 5px;">
+				<button type="button" class="button button-small" id="rfs_restore_description_btn">
 					<?php esc_html_e('Restore Original', 'rfs-ai-seo'); ?>
 				</button>
-			</p>
+			</div>
 		<?php endif; ?>
 	</div>
 
 	<!-- Generate Description Button -->
-	<div style="margin-bottom: 10px;">
-		<button type="button" class="button button-secondary button-large" id="rfs_generate_description_btn" style="width: 100%;">
+	<div class="rfs-generate-btn-wrap">
+		<button type="button" class="button button-secondary button-large" id="rfs_generate_description_btn">
 			<?php esc_html_e('Generate Description with AI', 'rfs-ai-seo'); ?>
 		</button>
-		<span class="spinner" id="rfs_description_spinner" style="float: none; margin: 8px auto 0; display: none;"></span>
+		<span class="spinner" id="rfs_description_spinner"></span>
 	</div>
 
 	<!-- Description Preview Panel (hidden by default) -->
-	<div class="rfs-description-preview" id="rfs_description_preview" style="display: none; background: #f6f7f7; padding: 15px; border-radius: 4px; margin-top: 10px;">
-		<h4 style="margin-top: 0;"><?php esc_html_e('Generated Description', 'rfs-ai-seo'); ?></h4>
+	<div class="rfs-description-preview" id="rfs_description_preview">
+		<h4><?php esc_html_e('Generated Description', 'rfs-ai-seo'); ?></h4>
 
 		<!-- HTML Preview -->
-		<div style="margin-bottom: 15px;">
-			<label style="font-weight: 600; display: block; margin-bottom: 5px;">
+		<div>
+			<label class="rfs-html-preview-label">
 				<?php esc_html_e('Preview (How it will look):', 'rfs-ai-seo'); ?>
 			</label>
-			<div id="rfs_description_html_preview" style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 15px; max-height: 300px; overflow-y: auto; line-height: 1.6;"></div>
+			<div class="rfs-html-preview" id="rfs_description_html_preview"></div>
 		</div>
 
 		<!-- HTML Source -->
-		<div style="margin-bottom: 10px;">
-			<label for="rfs_description_preview_text" style="font-weight: 600; display: block; margin-bottom: 5px;">
+		<div>
+			<label for="rfs_description_preview_text" class="rfs-html-source-label">
 				<?php esc_html_e('HTML Source (Editable):', 'rfs-ai-seo'); ?>
 			</label>
 		</div>
 		<textarea id="rfs_description_preview_text"
-				  class="widefat"
-				  rows="10"
-				  style="font-family: monospace; margin-bottom: 10px;"></textarea>
+				  class="widefat rfs-html-source"
+				  rows="10"></textarea>
 
-		<div style="margin-bottom: 10px;">
-			<span id="rfs_description_word_count" style="font-size: 12px; color: #666;"></span>
-		</div>
+		<span class="rfs-word-count" id="rfs_description_word_count"></span>
 
 		<div class="rfs-ai-seo-actions">
 			<button type="button" class="button button-primary" id="rfs_save_description_btn">
@@ -171,64 +168,61 @@ if (!defined('ABSPATH')) {
 			<button type="button" class="button" id="rfs_cancel_description_btn">
 				<?php esc_html_e('Cancel', 'rfs-ai-seo'); ?>
 			</button>
-			<span class="spinner" id="rfs_save_description_spinner" style="float: none; margin: 8px 0 0 8px; display: none;"></span>
+			<span class="spinner" id="rfs_save_description_spinner"></span>
 		</div>
 
-		<p id="rfs_description_token_info" style="font-size: 11px; color: #666; margin-top: 10px;"></p>
+		<p class="rfs-description-token-info" id="rfs_description_token_info"></p>
 	</div>
 
-	<hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+	<hr>
 
 	<!-- Product Short Description Section -->
-	<h4 style="margin: 15px 0 10px 0;"><?php esc_html_e('Product Short Description', 'rfs-ai-seo'); ?></h4>
+	<h4 class="rfs-section-title"><?php esc_html_e('Product Short Description', 'rfs-ai-seo'); ?></h4>
 
 	<!-- Current Short Description Status -->
-	<div class="rfs-short-description-status" style="margin-bottom: 15px;">
-		<p style="margin: 5px 0; font-size: 12px;">
+	<div class="rfs-short-description-status">
+		<p>
 			<strong><?php esc_html_e('Current Short Description:', 'rfs-ai-seo'); ?></strong>
 			<?php if (!empty($current_short_description)): ?>
-				<span style="color: #46b450;">✓ <?php esc_html_e('Set', 'rfs-ai-seo'); ?></span>
-				<span style="color: #666;">(<?php echo esc_html(str_word_count($current_short_description)); ?> <?php esc_html_e('words', 'rfs-ai-seo'); ?>)</span>
+				<span class="rfs-status-set"><?php echo esc_html("\xE2\x9C\x93"); ?> <?php esc_html_e('Set', 'rfs-ai-seo'); ?></span>
+				<span class="rfs-status-word-count">(<?php echo esc_html(str_word_count(wp_strip_all_tags($current_short_description))); ?> <?php esc_html_e('words', 'rfs-ai-seo'); ?>)</span>
 			<?php else: ?>
-				<span style="color: #dc3232;">✗ <?php esc_html_e('Empty', 'rfs-ai-seo'); ?></span>
+				<span class="rfs-status-empty"><?php echo esc_html("\xE2\x9C\x97"); ?> <?php esc_html_e('Empty', 'rfs-ai-seo'); ?></span>
 			<?php endif; ?>
 		</p>
 
 		<?php if ($has_original_short): ?>
-			<p style="margin: 5px 0; font-size: 12px; padding: 5px; background: #fff3cd; border-left: 3px solid #ffc107;">
+			<div class="rfs-backup-notice">
 				<strong><?php esc_html_e('Original Backup:', 'rfs-ai-seo'); ?></strong>
 				<?php esc_html_e('Available', 'rfs-ai-seo'); ?>
 				<?php if ($original_short_saved_at): ?>
-					<span style="color: #666;">(<?php echo esc_html(human_time_diff(strtotime($original_short_saved_at), current_time('timestamp'))); ?> <?php esc_html_e('ago', 'rfs-ai-seo'); ?>)</span>
+					<span class="rfs-backup-time">(<?php echo esc_html(human_time_diff(strtotime($original_short_saved_at), current_time('timestamp'))); ?> <?php esc_html_e('ago', 'rfs-ai-seo'); ?>)</span>
 				<?php endif; ?>
 				<br>
-				<button type="button" class="button button-small" id="rfs_restore_short_description_btn" style="margin-top: 5px;">
+				<button type="button" class="button button-small" id="rfs_restore_short_description_btn">
 					<?php esc_html_e('Restore Original', 'rfs-ai-seo'); ?>
 				</button>
-			</p>
+			</div>
 		<?php endif; ?>
 	</div>
 
 	<!-- Generate Short Description Button -->
-	<div style="margin-bottom: 10px;">
-		<button type="button" class="button button-secondary button-large" id="rfs_generate_short_description_btn" style="width: 100%;">
+	<div class="rfs-generate-btn-wrap">
+		<button type="button" class="button button-secondary button-large" id="rfs_generate_short_description_btn">
 			<?php esc_html_e('Generate Short Description with AI', 'rfs-ai-seo'); ?>
 		</button>
-		<span class="spinner" id="rfs_short_description_spinner" style="float: none; margin: 8px auto 0; display: none;"></span>
+		<span class="spinner" id="rfs_short_description_spinner"></span>
 	</div>
 
 	<!-- Short Description Preview Panel (hidden by default) -->
-	<div class="rfs-short-description-preview" id="rfs_short_description_preview" style="display: none; background: #f6f7f7; padding: 15px; border-radius: 4px; margin-top: 10px;">
-		<h4 style="margin-top: 0;"><?php esc_html_e('Generated Short Description', 'rfs-ai-seo'); ?></h4>
+	<div class="rfs-short-description-preview" id="rfs_short_description_preview">
+		<h4><?php esc_html_e('Generated Short Description', 'rfs-ai-seo'); ?></h4>
 
 		<textarea id="rfs_short_description_preview_text"
 				  class="widefat"
-				  rows="4"
-				  style="font-family: inherit; margin-bottom: 10px;"></textarea>
+				  rows="4"></textarea>
 
-		<div style="margin-bottom: 10px;">
-			<span id="rfs_short_description_word_count" style="font-size: 12px; color: #666;"></span>
-		</div>
+		<span class="rfs-word-count" id="rfs_short_description_word_count"></span>
 
 		<div class="rfs-ai-seo-actions">
 			<button type="button" class="button button-primary" id="rfs_save_short_description_btn">
@@ -240,9 +234,81 @@ if (!defined('ABSPATH')) {
 			<button type="button" class="button" id="rfs_cancel_short_description_btn">
 				<?php esc_html_e('Cancel', 'rfs-ai-seo'); ?>
 			</button>
-			<span class="spinner" id="rfs_save_short_description_spinner" style="float: none; margin: 8px 0 0 8px; display: none;"></span>
+			<span class="spinner" id="rfs_save_short_description_spinner"></span>
 		</div>
 
-		<p id="rfs_short_description_token_info" style="font-size: 11px; color: #666; margin-top: 10px;"></p>
+		<p class="rfs-description-token-info" id="rfs_short_description_token_info"></p>
 	</div>
+
+	<?php if (!empty($product_images)): ?>
+	<hr>
+
+	<!-- Image Alt Text Section -->
+	<h4 class="rfs-section-title"><?php esc_html_e('Image Alt Text', 'rfs-ai-seo'); ?></h4>
+
+	<?php
+	$images_with_alt = count(array_filter($product_images, function($img) { return $img['has_alt']; }));
+	$total_images = count($product_images);
+	?>
+
+	<div class="rfs-alt-text-summary">
+		<p>
+			<strong><?php
+				printf(
+					/* translators: 1: count with alt, 2: total count */
+					esc_html__('%1$d of %2$d images have alt text', 'rfs-ai-seo'),
+					$images_with_alt,
+					$total_images
+				);
+			?></strong>
+		</p>
+		<?php if ($images_with_alt < $total_images): ?>
+			<button type="button" class="button button-secondary button-small" id="rfs_generate_all_alt_text_btn">
+				<?php esc_html_e('Generate All Missing', 'rfs-ai-seo'); ?>
+			</button>
+			<span class="spinner" id="rfs_all_alt_text_spinner"></span>
+		<?php endif; ?>
+	</div>
+
+	<div class="rfs-alt-text-image-list" id="rfs_alt_text_image_list">
+		<?php foreach ($product_images as $img): ?>
+			<div class="rfs-alt-text-image-row" data-attachment-id="<?php echo esc_attr($img['attachment_id']); ?>">
+				<div class="rfs-alt-text-thumb">
+					<?php if ($img['thumbnail']): ?>
+						<img src="<?php echo esc_url($img['thumbnail']); ?>" alt="" width="40" height="40">
+					<?php else: ?>
+						<span class="dashicons dashicons-format-image"></span>
+					<?php endif; ?>
+				</div>
+				<div class="rfs-alt-text-info">
+					<span class="rfs-alt-text-type-badge rfs-alt-text-type-<?php echo esc_attr($img['type']); ?>">
+						<?php echo esc_html(ucfirst($img['type'])); ?>
+					</span>
+					<div class="rfs-alt-text-current">
+						<?php if ($img['has_alt']): ?>
+							<span class="rfs-alt-text-value"><?php echo esc_html($img['current_alt']); ?></span>
+						<?php else: ?>
+							<span class="rfs-status-empty"><?php esc_html_e('Not set', 'rfs-ai-seo'); ?></span>
+						<?php endif; ?>
+					</div>
+					<!-- Inline edit (hidden by default) -->
+					<div class="rfs-alt-text-edit" style="display: none;">
+						<input type="text" class="widefat rfs-alt-text-input" value="<?php echo esc_attr($img['current_alt']); ?>" maxlength="125">
+						<div class="rfs-alt-text-edit-actions">
+							<button type="button" class="button button-small button-primary rfs-alt-text-save-btn"><?php esc_html_e('Save', 'rfs-ai-seo'); ?></button>
+							<button type="button" class="button button-small rfs-alt-text-cancel-btn"><?php esc_html_e('Cancel', 'rfs-ai-seo'); ?></button>
+							<span class="spinner rfs-alt-text-save-spinner"></span>
+						</div>
+					</div>
+				</div>
+				<div class="rfs-alt-text-actions">
+					<button type="button" class="button button-small rfs-alt-text-generate-btn" title="<?php esc_attr_e('Generate', 'rfs-ai-seo'); ?>">
+						<?php esc_html_e('Generate', 'rfs-ai-seo'); ?>
+					</button>
+					<span class="spinner rfs-alt-text-spinner"></span>
+				</div>
+			</div>
+		<?php endforeach; ?>
+	</div>
+	<?php endif; ?>
 </div>

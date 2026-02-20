@@ -84,6 +84,10 @@ class Meta_Box {
 		// Get current product short description.
 		$current_short_description = $product ? $product->get_short_description() : '';
 
+		// Collect product images for alt text section.
+		$alt_text_gen = new Alt_Text_Generator();
+		$product_images = $alt_text_gen->get_product_images($post->ID);
+
 		// Include meta box template.
 		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/meta-box.php';
 	}

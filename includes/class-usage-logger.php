@@ -49,6 +49,19 @@ class Usage_Logger {
 
 		$inserted = $wpdb->insert($table_name, $insert_data);
 
+		if ($inserted) {
+			// Deduct cost from credit balance.
+			$cost_usd = $this->calculate_cost(
+				(int) ($data['tokens_prompt'] ?? 0),
+				(int) ($data['tokens_completion'] ?? 0),
+				$data['model'] ?? 'gpt-4o'
+			);
+
+			if ($cost_usd > 0) {
+				Credits_Manager::deduct_cost($cost_usd);
+			}
+		}
+
 		return $inserted ? $wpdb->insert_id : false;
 	}
 
@@ -277,6 +290,8 @@ class Usage_Logger {
 			'product' => 0,
 			'product_variation' => 0,
 			'product_cat' => 0,
+			'image_generation' => 0,
+			'alt_text' => 0,
 		];
 
 		foreach ($by_type as $type) {
@@ -295,18 +310,29 @@ class Usage_Logger {
 	private function calculate_total_cost(array $by_model): float {
 		$total_cost = 0;
 
-		foreach ($by_model as $model_data) {
-			// We don't have separate prompt/completion counts in by_model query,
-			// so this is an approximation (assuming 70% prompt, 30% completion).
-			$tokens = (int) $model_data['tokens'];
-			$prompt_tokens = (int) ($tokens * 0.7);
-			$completion_tokens = (int) ($tokens * 0.3);
+		// Gemini image models use flat per-image pricing.
+		$gemini_image_models = [
+			'gemini-2.5-flash-image',
+			'gemini-3-pro-image-preview',
+			'gemini-2.0-flash-exp',
+		];
 
-			$total_cost += $this->calculate_cost(
-				$prompt_tokens,
-				$completion_tokens,
-				$model_data['model']
-			);
+		foreach ($by_model as $model_data) {
+			if (in_array($model_data['model'], $gemini_image_models, true)) {
+				// For image models, cost = flat rate * number of generations.
+				$total_cost += $this->calculate_cost(0, 0, $model_data['model']) * (int) $model_data['count'];
+			} else {
+				// For text models, approximate from tokens (70% prompt, 30% completion).
+				$tokens = (int) $model_data['tokens'];
+				$prompt_tokens = (int) ($tokens * 0.7);
+				$completion_tokens = (int) ($tokens * 0.3);
+
+				$total_cost += $this->calculate_cost(
+					$prompt_tokens,
+					$completion_tokens,
+					$model_data['model']
+				);
+			}
 		}
 
 		return $total_cost;
@@ -320,8 +346,24 @@ class Usage_Logger {
 	 * @param string $model             Model.
 	 * @return float Cost in USD (with multiplier applied).
 	 */
-	private function calculate_cost(int $prompt_tokens, int $completion_tokens, string $model): float {
-		// Rates per 1K tokens (as of 2024).
+	public function calculate_cost(int $prompt_tokens, int $completion_tokens, string $model): float {
+		// Gemini image models use flat per-image pricing (no token-based cost).
+		$gemini_image_models = [
+			'gemini-2.5-flash-image' => 0.039,         // ~$0.039 per image
+			'gemini-3-pro-image-preview' => 0.08,       // ~$0.08 per image (Pro)
+			'gemini-2.0-flash-exp' => 0.039,            // ~$0.039 per image
+		];
+
+		if (isset($gemini_image_models[$model])) {
+			$cost = $gemini_image_models[$model];
+
+			$settings = new Settings();
+			$multiplier = $settings->get_cost_multiplier($model);
+
+			return $cost * $multiplier;
+		}
+
+		// Rates per 1K tokens for OpenAI text models.
 		$rates = [
 			'gpt-4o' => [
 				'prompt' => 0.005,
@@ -338,9 +380,9 @@ class Usage_Logger {
 		$cost = (($prompt_tokens / 1000) * $rate['prompt']) +
 				(($completion_tokens / 1000) * $rate['completion']);
 
-		// Apply cost multiplier from settings.
+		// Apply model-specific cost multiplier.
 		$settings = new Settings();
-		$multiplier = $settings->get_cost_multiplier();
+		$multiplier = $settings->get_cost_multiplier($model);
 
 		return $cost * $multiplier;
 	}
@@ -351,6 +393,18 @@ class Usage_Logger {
 	 * @return array Status array with 'allowed', 'current_cost', 'cap', 'remaining'.
 	 */
 	public function check_spending_cap(): array {
+		// Check credit balance first — block if empty.
+		$credit_check = Credits_Manager::check_balance();
+		if (!$credit_check['allowed']) {
+			return [
+				'allowed' => false,
+				'current_cost' => 0,
+				'cap' => 0,
+				'remaining' => 0,
+				'message' => $credit_check['message'],
+			];
+		}
+
 		$settings = new Settings();
 
 		// If no cap is defined, always allow.
@@ -406,6 +460,16 @@ class Usage_Logger {
 		if ($object_type === 'product_cat') {
 			$term = get_term($object_id, 'product_cat');
 			return $term && !is_wp_error($term) ? $term->name : "Category #{$object_id}";
+		}
+
+		if ($object_type === 'image_generation') {
+			$post = get_post($object_id);
+			return $post ? $post->post_title : "Image #{$object_id}";
+		}
+
+		if ($object_type === 'alt_text') {
+			$post = get_post($object_id);
+			return $post ? $post->post_title : "Image #{$object_id}";
 		}
 
 		$post = get_post($object_id);

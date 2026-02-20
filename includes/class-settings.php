@@ -118,6 +118,17 @@ class Settings {
 			]
 		);
 
+		// Gemini API Key.
+		register_setting(
+			'rfs_ai_seo_settings',
+			'rfs_ai_seo_gemini_api_key',
+			[
+				'type' => 'string',
+				'sanitize_callback' => [$this, 'sanitize_gemini_api_key'],
+				'default' => '',
+			]
+		);
+
 		// Image Generation Settings.
 		register_setting(
 			'rfs_ai_seo_settings',
@@ -125,57 +136,59 @@ class Settings {
 			[
 				'type' => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
-				'default' => 'dall-e-3',
+				'default' => 'gemini-2.5-flash-image',
 			]
 		);
 
 		register_setting(
 			'rfs_ai_seo_settings',
-			'rfs_ai_seo_image_size',
+			'rfs_ai_seo_image_aspect_ratio',
 			[
 				'type' => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
-				'default' => '1024x1024',
+				'default' => '1:1',
 			]
 		);
 
+		// Display Currency.
 		register_setting(
 			'rfs_ai_seo_settings',
-			'rfs_ai_seo_image_quality',
+			'rfs_ai_seo_display_currency',
 			[
 				'type' => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
-				'default' => 'standard',
-			]
-		);
-
-		register_setting(
-			'rfs_ai_seo_settings',
-			'rfs_ai_seo_image_style',
-			[
-				'type' => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default' => 'vivid',
+				'default' => 'USD',
 			]
 		);
 	}
 
 	/**
-	 * Sanitize and encrypt API key.
+	 * Sanitize API key.
+	 *
+	 * Note: Encryption is handled by Settings::update_option(), not here.
+	 * This callback is only for sanitization to avoid double-encryption.
 	 *
 	 * @param string $value API key value.
-	 * @return string Encrypted API key.
+	 * @return string Sanitized value (passed through to update_option which encrypts).
 	 */
 	public function sanitize_api_key(string $value): string {
-		$value = sanitize_text_field($value);
+		// Just sanitize — do NOT encrypt here.
+		// Encryption is handled by Settings::update_option().
+		return sanitize_text_field($value);
+	}
 
-		// If empty, keep the existing value.
-		if (empty($value)) {
-			return get_option('rfs_ai_seo_openai_api_key', '');
-		}
-
-		// Encrypt the new key.
-		return $this->encrypt_api_key($value);
+	/**
+	 * Sanitize Gemini API key.
+	 *
+	 * Note: Encryption is handled by Settings::update_option(), not here.
+	 * This callback is only for sanitization to avoid double-encryption.
+	 *
+	 * @param string $value Gemini API key value.
+	 * @return string Sanitized value (passed through to update_option which encrypts).
+	 */
+	public function sanitize_gemini_api_key(string $value): string {
+		// Just sanitize — do NOT encrypt here.
+		return sanitize_text_field($value);
 	}
 
 	/**
@@ -259,8 +272,13 @@ class Settings {
 	public function get_option(string $key, $default = null) {
 		$value = get_option($key, $default);
 
-		// Decrypt API key if requested.
-		if ($key === 'rfs_ai_seo_openai_api_key' && !empty($value)) {
+		// Decrypt API keys if requested.
+		$encrypted_keys = [
+			'rfs_ai_seo_openai_api_key',
+			'rfs_ai_seo_gemini_api_key',
+			'rfs_ai_seo_stripe_secret_key',
+		];
+		if (in_array($key, $encrypted_keys, true) && !empty($value)) {
 			return $this->decrypt_api_key($value);
 		}
 
@@ -275,11 +293,14 @@ class Settings {
 	 * @return bool True on success, false on failure.
 	 */
 	public function update_option(string $key, $value): bool {
-		// Encrypt API key if being updated.
-		if ($key === 'rfs_ai_seo_openai_api_key' && !empty($value)) {
-			error_log('RFS AI SEO: update_option - Encrypting API key, original length: ' . strlen($value));
+		// Encrypt API keys if being updated.
+		$encrypted_keys = [
+			'rfs_ai_seo_openai_api_key',
+			'rfs_ai_seo_gemini_api_key',
+			'rfs_ai_seo_stripe_secret_key',
+		];
+		if (in_array($key, $encrypted_keys, true) && !empty($value)) {
 			$value = $this->encrypt_api_key($value);
-			error_log('RFS AI SEO: update_option - Encrypted API key, encrypted length: ' . strlen($value));
 		}
 
 		return update_option($key, $value);
@@ -360,9 +381,28 @@ class Settings {
 	/**
 	 * Get cost multiplier from wp-config.
 	 *
+	 * Uses model-specific constants:
+	 *   - RFS_AI_SEO_GPT_MULTIPLIER    (for OpenAI GPT models, default: 100)
+	 *   - RFS_AI_SEO_GEMINI_MULTIPLIER  (for Google Gemini models, default: 100)
+	 *
+	 * Falls back to the legacy RFS_AI_SEO_MULTIPLYER constant if model-specific ones are not defined.
+	 *
+	 * @param string $model Optional model name to determine which multiplier to use.
 	 * @return float Cost multiplier (default: 100).
 	 */
-	public function get_cost_multiplier(): float {
+	public function get_cost_multiplier(string $model = ''): float {
+		$is_gemini = str_contains($model, 'gemini');
+
+		// Check model-specific constants first.
+		if ($is_gemini && defined('RFS_AI_SEO_GEMINI_MULTIPLIER') && RFS_AI_SEO_GEMINI_MULTIPLIER > 0) {
+			return (float) RFS_AI_SEO_GEMINI_MULTIPLIER;
+		}
+
+		if (!$is_gemini && defined('RFS_AI_SEO_GPT_MULTIPLIER') && RFS_AI_SEO_GPT_MULTIPLIER > 0) {
+			return (float) RFS_AI_SEO_GPT_MULTIPLIER;
+		}
+
+		// Fall back to legacy constant.
 		if (defined('RFS_AI_SEO_MULTIPLYER') && RFS_AI_SEO_MULTIPLYER > 0) {
 			return (float) RFS_AI_SEO_MULTIPLYER;
 		}
@@ -393,38 +433,258 @@ class Settings {
 	}
 
 	/**
+	 * Get company name.
+	 *
+	 * @return string Company name.
+	 */
+	public function get_company_name(): string {
+		return get_option('rfs_ai_seo_company_name', '');
+	}
+
+	/**
+	 * Get decrypted Gemini API key.
+	 *
+	 * @return string Decrypted Gemini API key or empty string.
+	 */
+	public function get_gemini_api_key(): string {
+		if (defined('RFS_AI_SEO_GEMINI_KEY') && !empty(RFS_AI_SEO_GEMINI_KEY)) {
+			return RFS_AI_SEO_GEMINI_KEY;
+		}
+
+		return $this->get_option('rfs_ai_seo_gemini_api_key', '');
+	}
+
+	/**
+	 * Check if Gemini API key is defined as constant.
+	 *
+	 * @return bool True if constant is defined.
+	 */
+	public function is_gemini_key_constant(): bool {
+		return defined('RFS_AI_SEO_GEMINI_KEY') && !empty(RFS_AI_SEO_GEMINI_KEY);
+	}
+
+	/**
 	 * Get image generation model.
 	 *
 	 * @return string Image model name.
 	 */
 	public function get_image_model(): string {
-		return $this->get_option('rfs_ai_seo_image_model', 'dall-e-3');
+		return $this->get_option('rfs_ai_seo_image_model', 'gemini-2.5-flash-image');
 	}
 
 	/**
-	 * Get image size/aspect ratio.
+	 * Get image aspect ratio.
 	 *
-	 * @return string Image size (1024x1024, 1024x1792, 1792x1024).
+	 * @return string Aspect ratio (1:1, 16:9, etc.).
 	 */
-	public function get_image_size(): string {
-		return $this->get_option('rfs_ai_seo_image_size', '1024x1024');
+	public function get_image_aspect_ratio(): string {
+		return $this->get_option('rfs_ai_seo_image_aspect_ratio', '1:1');
 	}
 
 	/**
-	 * Get image quality.
+	 * Get predefined image prompt templates.
 	 *
-	 * @return string Image quality (standard, hd).
+	 * @return array Array of prompt templates with 'title' and 'description' keys.
 	 */
-	public function get_image_quality(): string {
-		return $this->get_option('rfs_ai_seo_image_quality', 'standard');
+	public function get_image_prompts(): array {
+		$prompts = $this->get_option('rfs_ai_seo_image_prompts', []);
+
+		return is_array($prompts) ? $prompts : [];
 	}
 
 	/**
-	 * Get image style.
+	 * Get the display currency.
 	 *
-	 * @return string Image style (vivid, natural).
+	 * @return string Currency code (USD, GBP, EUR).
 	 */
-	public function get_image_style(): string {
-		return $this->get_option('rfs_ai_seo_image_style', 'vivid');
+	public function get_display_currency(): string {
+		return $this->get_option('rfs_ai_seo_display_currency', 'USD');
+	}
+
+	/**
+	 * Get the currency symbol for the display currency.
+	 *
+	 * @return string Currency symbol ($, £, or €).
+	 */
+	public function get_currency_symbol(): string {
+		$symbols = [
+			'USD' => '$',
+			'GBP' => "\xC2\xA3",
+			'EUR' => "\xE2\x82\xAC",
+		];
+
+		$currency = $this->get_display_currency();
+
+		return $symbols[$currency] ?? '$';
+	}
+
+	/**
+	 * Get exchange rates (USD base), cached in a transient.
+	 *
+	 * @return array Associative array of currency code => rate from USD.
+	 */
+	public function get_exchange_rates(): array {
+		$cached = get_transient('rfs_ai_seo_exchange_rates');
+
+		if ($cached !== false && is_array($cached)) {
+			return $cached;
+		}
+
+		$rates = $this->fetch_ecb_rates();
+
+		if (!empty($rates)) {
+			set_transient('rfs_ai_seo_exchange_rates', $rates, DAY_IN_SECONDS);
+			return $rates;
+		}
+
+		// Fallback hardcoded rates if ECB unavailable.
+		$fallback = [
+			'USD' => 1.0,
+			'GBP' => 0.79,
+			'EUR' => 0.92,
+		];
+
+		set_transient('rfs_ai_seo_exchange_rates', $fallback, HOUR_IN_SECONDS);
+
+		return $fallback;
+	}
+
+	/**
+	 * Fetch exchange rates from the ECB daily XML feed.
+	 *
+	 * Returns rates relative to USD (i.e., how much 1 USD is worth in each currency).
+	 *
+	 * @return array Associative array of currency code => rate from USD, or empty on failure.
+	 */
+	private function fetch_ecb_rates(): array {
+		$response = wp_remote_get(
+			'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml',
+			['timeout' => 10]
+		);
+
+		if (is_wp_error($response)) {
+			return [];
+		}
+
+		$body = wp_remote_retrieve_body($response);
+
+		if (empty($body)) {
+			return [];
+		}
+
+		// Suppress XML errors.
+		libxml_use_internal_errors(true);
+		$xml = simplexml_load_string($body);
+		libxml_clear_errors();
+
+		if ($xml === false) {
+			return [];
+		}
+
+		// ECB rates are EUR-based. Extract USD and GBP rates from EUR.
+		$eur_to_usd = 0;
+		$eur_to_gbp = 0;
+
+		$namespaces = $xml->getNamespaces(true);
+		$cube_ns = $namespaces[''] ?? '';
+
+		foreach ($xml->Cube->Cube->Cube as $rate) {
+			$currency = (string) $rate['currency'];
+			$value = (float) $rate['rate'];
+
+			if ($currency === 'USD') {
+				$eur_to_usd = $value;
+			} elseif ($currency === 'GBP') {
+				$eur_to_gbp = $value;
+			}
+		}
+
+		if ($eur_to_usd <= 0) {
+			return [];
+		}
+
+		// Convert to USD-based rates.
+		return [
+			'USD' => 1.0,
+			'GBP' => $eur_to_gbp / $eur_to_usd,
+			'EUR' => 1.0 / $eur_to_usd,
+		];
+	}
+
+	/**
+	 * Get decrypted Stripe secret key.
+	 *
+	 * @return string Stripe secret key or empty string.
+	 */
+	public function get_stripe_secret_key(): string {
+		if (defined('RFS_AI_SEO_STRIPE_SECRET_KEY') && !empty(RFS_AI_SEO_STRIPE_SECRET_KEY)) {
+			return RFS_AI_SEO_STRIPE_SECRET_KEY;
+		}
+
+		return $this->get_option('rfs_ai_seo_stripe_secret_key', '');
+	}
+
+	/**
+	 * Get Stripe publishable key.
+	 *
+	 * @return string Stripe publishable key or empty string.
+	 */
+	public function get_stripe_publishable_key(): string {
+		if (defined('RFS_AI_SEO_STRIPE_PUBLISHABLE_KEY') && !empty(RFS_AI_SEO_STRIPE_PUBLISHABLE_KEY)) {
+			return RFS_AI_SEO_STRIPE_PUBLISHABLE_KEY;
+		}
+
+		return get_option('rfs_ai_seo_stripe_publishable_key', '');
+	}
+
+	/**
+	 * Check if Stripe secret key is defined as constant.
+	 *
+	 * @return bool True if constant is defined.
+	 */
+	public function is_stripe_secret_constant(): bool {
+		return defined('RFS_AI_SEO_STRIPE_SECRET_KEY') && !empty(RFS_AI_SEO_STRIPE_SECRET_KEY);
+	}
+
+	/**
+	 * Check if Stripe publishable key is defined as constant.
+	 *
+	 * @return bool True if constant is defined.
+	 */
+	public function is_stripe_publishable_constant(): bool {
+		return defined('RFS_AI_SEO_STRIPE_PUBLISHABLE_KEY') && !empty(RFS_AI_SEO_STRIPE_PUBLISHABLE_KEY);
+	}
+
+	/**
+	 * Convert an amount from USD to the display currency.
+	 *
+	 * @param float $amount Amount in USD.
+	 * @return float Converted amount.
+	 */
+	public function convert_from_usd(float $amount): float {
+		$currency = $this->get_display_currency();
+
+		if ($currency === 'USD') {
+			return $amount;
+		}
+
+		$rates = $this->get_exchange_rates();
+		$rate = $rates[$currency] ?? 1.0;
+
+		return $amount * $rate;
+	}
+
+	/**
+	 * Format a cost in the display currency.
+	 *
+	 * @param float $amount_usd Amount in USD.
+	 * @param int   $decimals   Number of decimal places (default: 2).
+	 * @return string Formatted cost string (e.g., "$1.23" or "£0.98").
+	 */
+	public function format_cost(float $amount_usd, int $decimals = 2): string {
+		$converted = $this->convert_from_usd($amount_usd);
+		$symbol = $this->get_currency_symbol();
+
+		return $symbol . number_format($converted, $decimals);
 	}
 }

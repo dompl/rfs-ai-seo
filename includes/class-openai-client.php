@@ -186,6 +186,100 @@ class OpenAI_Client {
 	}
 
 	/**
+	 * Generate alt text for an image.
+	 *
+	 * @param string $prompt The prompt to send to OpenAI.
+	 * @return array|\WP_Error Array with alt_text and token usage, or WP_Error on failure.
+	 */
+	public function generate_alt_text(string $prompt): array|\WP_Error {
+		if (empty($this->api_key)) {
+			return new \WP_Error(
+				'no_api_key',
+				__('OpenAI API key is not configured. Please add your API key in the settings.', 'rfs-ai-seo')
+			);
+		}
+
+		if (empty($prompt)) {
+			return new \WP_Error(
+				'empty_prompt',
+				__('Prompt cannot be empty.', 'rfs-ai-seo')
+			);
+		}
+
+		$payload = [
+			'model' => $this->model,
+			'messages' => [
+				[
+					'role' => 'system',
+					'content' => 'You are an accessibility and SEO specialist. Respond only in valid JSON format with an "alt_text" key.',
+				],
+				[
+					'role' => 'user',
+					'content' => $prompt,
+				],
+			],
+			'temperature' => 0.7,
+			'max_tokens' => 300,
+		];
+
+		$response = $this->make_request($payload);
+
+		if (is_wp_error($response)) {
+			return $response;
+		}
+
+		return $this->parse_alt_text_response($response);
+	}
+
+	/**
+	 * Parse the alt text generation response.
+	 *
+	 * @param array $response API response.
+	 * @return array|\WP_Error Parsed data or WP_Error.
+	 */
+	private function parse_alt_text_response(array $response): array|\WP_Error {
+		$content = $response['choices'][0]['message']['content'] ?? '';
+
+		if (empty($content)) {
+			return new \WP_Error(
+				'empty_response',
+				__('OpenAI returned an empty response.', 'rfs-ai-seo')
+			);
+		}
+
+		$content = $this->extract_json($content);
+
+		$parsed = json_decode($content, true);
+
+		if (json_last_error() !== JSON_ERROR_NONE) {
+			error_log('RFS AI SEO: Invalid JSON response for alt text: ' . $content);
+			return new \WP_Error(
+				'invalid_json',
+				__('OpenAI did not return valid JSON. Please try again.', 'rfs-ai-seo')
+			);
+		}
+
+		if (!isset($parsed['alt_text'])) {
+			error_log('RFS AI SEO: Missing alt_text in response: ' . $content);
+			return new \WP_Error(
+				'missing_fields',
+				__('OpenAI response is missing the alt_text field.', 'rfs-ai-seo')
+			);
+		}
+
+		$tokens = [
+			'prompt' => $response['usage']['prompt_tokens'] ?? 0,
+			'completion' => $response['usage']['completion_tokens'] ?? 0,
+			'total' => $response['usage']['total_tokens'] ?? 0,
+		];
+
+		return [
+			'alt_text' => trim($parsed['alt_text']),
+			'tokens' => $tokens,
+		];
+	}
+
+	/**
 	 * Build the API request payload.
 	 *
 	 * @param string $prompt User prompt.
@@ -340,6 +434,9 @@ class OpenAI_Client {
 			);
 		}
 
+		// Strip markdown code blocks if present (```json ... ``` or ``` ... ```).
+		$content = $this->extract_json($content);
+
 		// Parse JSON from content.
 		$parsed = json_decode($content, true);
 
@@ -394,6 +491,9 @@ class OpenAI_Client {
 			);
 		}
 
+		// Strip markdown code blocks if present.
+		$content = $this->extract_json($content);
+
 		// Parse JSON from content.
 		$parsed = json_decode($content, true);
 
@@ -428,5 +528,27 @@ class OpenAI_Client {
 			'description' => trim($parsed['description']),
 			'tokens' => $tokens,
 		];
+	}
+
+	/**
+	 * Extract JSON from content that may be wrapped in markdown code blocks.
+	 *
+	 * @param string $content Raw content from OpenAI.
+	 * @return string Cleaned JSON string.
+	 */
+	private function extract_json(string $content): string {
+		$content = trim($content);
+
+		// Strip markdown code blocks: ```json ... ``` or ``` ... ```
+		if (preg_match('/```(?:json)?\s*\n?(.*?)\n?\s*```/s', $content, $matches)) {
+			return trim($matches[1]);
+		}
+
+		// Try to extract a JSON object if there's extra text around it.
+		if (preg_match('/(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})/s', $content, $matches)) {
+			return trim($matches[1]);
+		}
+
+		return $content;
 	}
 }

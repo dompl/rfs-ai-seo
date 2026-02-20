@@ -14,8 +14,8 @@ if (!defined('ABSPATH')) {
 <div class="wrap rfs-ai-seo-bulk-generator">
 	<h1><?php esc_html_e('Bulk Generate Product Descriptions', 'rfs-ai-seo'); ?></h1>
 
-	<div class="rfs-bulk-intro" style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 15px 20px; margin: 20px 0; border-radius: 3px;">
-		<p style="margin: 0;">
+	<div class="rfs-info-box">
+		<p>
 			<?php esc_html_e('Generate AI-powered product descriptions for multiple products at once. The AI will use your business context from the AI Trainer and existing product information to create compelling descriptions.', 'rfs-ai-seo'); ?>
 		</p>
 	</div>
@@ -90,7 +90,7 @@ if (!defined('ABSPATH')) {
 			</thead>
 			<tbody id="rfs_desc_bulk_items_tbody">
 				<tr>
-					<td colspan="5" style="text-align: center; padding: 40px;">
+					<td colspan="5" class="rfs-empty-state">
 						<?php esc_html_e('Click "Filter" to load products...', 'rfs-ai-seo'); ?>
 					</td>
 				</tr>
@@ -133,21 +133,21 @@ if (!defined('ABSPATH')) {
 		</div>
 
 		<div class="rfs-ai-seo-progress-stats">
-			<div class="rfs-stat-card success">
+			<div class="rfs-stat-card rfs-stat-success">
 				<div class="rfs-stat-icon">&#10003;</div>
 				<div class="rfs-stat-content">
 					<div class="rfs-stat-value" id="rfs_desc_progress_success">0</div>
 					<div class="rfs-stat-label"><?php esc_html_e('Success', 'rfs-ai-seo'); ?></div>
 				</div>
 			</div>
-			<div class="rfs-stat-card error">
+			<div class="rfs-stat-card rfs-stat-error">
 				<div class="rfs-stat-icon">&#10005;</div>
 				<div class="rfs-stat-content">
 					<div class="rfs-stat-value" id="rfs_desc_progress_failed">0</div>
 					<div class="rfs-stat-label"><?php esc_html_e('Failed', 'rfs-ai-seo'); ?></div>
 				</div>
 			</div>
-			<div class="rfs-stat-card info">
+			<div class="rfs-stat-card rfs-stat-info">
 				<div class="rfs-stat-icon">&#9873;</div>
 				<div class="rfs-stat-content">
 					<div class="rfs-stat-value" id="rfs_desc_progress_tokens">0</div>

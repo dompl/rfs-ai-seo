@@ -41,8 +41,8 @@ class Content_Collector {
 			'short_description' => wp_strip_all_tags($product->get_short_description()),
 			'sku' => $product->get_sku() ?: '',
 			'price' => $this->format_price($product),
-			'regular_price' => $product->get_regular_price() ? wc_price($product->get_regular_price()) : '',
-			'sale_price' => $product->get_sale_price() ? wc_price($product->get_sale_price()) : '',
+			'regular_price' => $product->get_regular_price() ? wp_strip_all_tags(wc_price($product->get_regular_price())) : '',
+			'sale_price' => $product->get_sale_price() ? wp_strip_all_tags(wc_price($product->get_sale_price())) : '',
 			'categories' => $this->get_product_categories($product_id),
 			'category_hierarchy' => $this->get_category_hierarchy($product_id),
 			'tags' => $this->get_product_tags($product_id),
@@ -113,7 +113,7 @@ class Content_Collector {
 	 * @return string Formatted price.
 	 */
 	private function format_price(\WC_Product $product): string {
-		return $product->get_price() ? wc_price($product->get_price()) : '';
+		return $product->get_price() ? wp_strip_all_tags(wc_price($product->get_price())) : '';
 	}
 
 	/**

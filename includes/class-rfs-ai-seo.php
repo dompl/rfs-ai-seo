@@ -84,6 +84,7 @@ final class RFS_AI_SEO {
 		new Bulk_Generator(); // Initialize bulk generator.
 		new Description_Generator(); // Initialize description generator.
 		new Image_Generator(); // Initialize image generator.
+		new Alt_Text_Generator(); // Initialize alt text generator.
 
 		// Enqueue admin assets.
 		add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
@@ -110,6 +111,9 @@ final class RFS_AI_SEO {
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-bulk-generator.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-usage-logger.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-image-generator.php';
+		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-alt-text-generator.php';
+		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-credits-manager.php';
+		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-stripe-client.php';
 	}
 
 	/**
@@ -205,6 +209,9 @@ final class RFS_AI_SEO {
 			'rfs-ai_page_rfs-ai-description-bulk',
 			'rfs-ai_page_rfs-ai-short-description-bulk',
 			'rfs-ai_page_rfs-ai-trainer',
+			'rfs-ai_page_rfs-ai-image-bulk',
+			'rfs-ai_page_rfs-ai-alt-text-bulk',
+			'rfs-ai_page_rfs-ai-credits',
 			'rfs-ai_page_rfs-ai-stats',
 		];
 
@@ -221,14 +228,22 @@ final class RFS_AI_SEO {
 		// Only load on our plugin pages and product/category edit screens.
 		$allowed_hooks = array_merge(
 			$plugin_pages,
-			['post.php', 'post-new.php', 'term.php', 'edit-tags.php', 'upload.php']
+			['post.php', 'post-new.php', 'term.php', 'edit-tags.php']
 		);
 
 		if (!in_array($hook, $allowed_hooks, true)) {
 			return;
 		}
 
-		// No custom CSS - using default WordPress styling only.
+		// Enqueue admin CSS.
+		$css_file = RFS_AI_SEO_PLUGIN_DIR . 'admin/css/admin.css';
+		$css_ver  = RFS_AI_SEO_VERSION . '.' . (file_exists($css_file) ? filemtime($css_file) : '0');
+		wp_enqueue_style(
+			'rfs-ai-seo-admin',
+			RFS_AI_SEO_PLUGIN_URL . 'admin/css/admin.css',
+			[],
+			$css_ver
+		);
 
 		// Enqueue admin JS.
 		wp_enqueue_script(
@@ -258,20 +273,43 @@ final class RFS_AI_SEO {
 					RFS_AI_SEO_VERSION,
 					true
 				);
+
+				$alt_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/alt-text-generator.js';
+				wp_enqueue_script(
+					'rfs-ai-alt-text-generator',
+					RFS_AI_SEO_PLUGIN_URL . 'admin/js/alt-text-generator.js',
+					['jquery'],
+					RFS_AI_SEO_VERSION . '.' . (file_exists($alt_js) ? filemtime($alt_js) : '0'),
+					true
+				);
 			}
 		}
 
-		// Enqueue image generator JS on media library and attachment edit screens.
-		if (in_array($hook, ['post.php', 'upload.php'])) {
+		// Enqueue featured image generator JS on post edit screens with thumbnail support.
+		// Products get both scripts: the grid generator and the simple featured generator
+		// (used as fallback when a product has no images).
+		if (in_array($hook, ['post.php', 'post-new.php'])) {
 			$screen = get_current_screen();
-			if ($screen && ($screen->post_type === 'attachment' || $screen->id === 'upload')) {
+			if ($screen && post_type_supports($screen->post_type, 'thumbnail')) {
+				$feat_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/featured-image-generator.js';
 				wp_enqueue_script(
-					'rfs-ai-image-generator',
-					RFS_AI_SEO_PLUGIN_URL . 'admin/js/image-generator.js',
+					'rfs-ai-featured-image-generator',
+					RFS_AI_SEO_PLUGIN_URL . 'admin/js/featured-image-generator.js',
 					['jquery'],
-					RFS_AI_SEO_VERSION,
+					RFS_AI_SEO_VERSION . '.' . (file_exists($feat_js) ? filemtime($feat_js) : '0'),
 					true
 				);
+
+				if ($screen->post_type === 'product') {
+					$prod_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/product-image-generator.js';
+					wp_enqueue_script(
+						'rfs-ai-product-image-generator',
+						RFS_AI_SEO_PLUGIN_URL . 'admin/js/product-image-generator.js',
+						['jquery'],
+						RFS_AI_SEO_VERSION . '.' . (file_exists($prod_js) ? filemtime($prod_js) : '0'),
+						true
+					);
+				}
 			}
 		}
 
@@ -354,6 +392,98 @@ final class RFS_AI_SEO {
 			);
 		}
 
+		// Enqueue image bulk generator JS on image bulk page.
+		if ($hook === 'rfs-ai_page_rfs-ai-image-bulk') {
+			$img_bulk_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/image-bulk-generator.js';
+			wp_enqueue_script(
+				'rfs-ai-image-bulk',
+				RFS_AI_SEO_PLUGIN_URL . 'admin/js/image-bulk-generator.js',
+				['jquery'],
+				RFS_AI_SEO_VERSION . '.' . (file_exists($img_bulk_js) ? filemtime($img_bulk_js) : '0'),
+				true
+			);
+
+			$image_cost_est = Image_Generator::estimate_cost_per_image(
+				$this->settings->get_image_model()
+			);
+
+			// Localize image bulk generator script with its own dedicated global
+			// to avoid being overwritten by the main rfsAiSeo localization below.
+			wp_localize_script(
+				'rfs-ai-image-bulk',
+				'rfsAiImageBulk',
+				[
+					'ajaxUrl' => admin_url('admin-ajax.php'),
+					'nonce' => wp_create_nonce('rfs_ai_seo_nonce'),
+					'imageCostEstimate' => $image_cost_est,
+					'imageCostEstimateFormatted' => $this->settings->format_cost($image_cost_est, 4),
+					'currencySymbol' => $this->settings->get_currency_symbol(),
+					'strings' => [
+						'generating' => __('Generating...', 'rfs-ai-seo'),
+						'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),
+						'noItems' => __('No products found with current filters.', 'rfs-ai-seo'),
+					],
+				]
+			);
+		}
+
+		// Enqueue alt text bulk generator JS on alt text bulk page.
+		if ($hook === 'rfs-ai_page_rfs-ai-alt-text-bulk') {
+			$alt_bulk_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/alt-text-bulk.js';
+			wp_enqueue_script(
+				'rfs-ai-alt-text-bulk',
+				RFS_AI_SEO_PLUGIN_URL . 'admin/js/alt-text-bulk.js',
+				['jquery'],
+				RFS_AI_SEO_VERSION . '.' . (file_exists($alt_bulk_js) ? filemtime($alt_bulk_js) : '0'),
+				true
+			);
+
+			wp_localize_script(
+				'rfs-ai-alt-text-bulk',
+				'rfsAiAltText',
+				[
+					'ajaxUrl' => admin_url('admin-ajax.php'),
+					'nonce'   => wp_create_nonce('rfs_ai_seo_nonce'),
+					'strings' => [
+						'generating' => __('Generating...', 'rfs-ai-seo'),
+						'error'      => __('An error occurred. Please try again.', 'rfs-ai-seo'),
+						'noItems'    => __('No products found with current filters.', 'rfs-ai-seo'),
+					],
+				]
+			);
+		}
+
+		// Enqueue credits page JS.
+		if ($hook === 'rfs-ai_page_rfs-ai-credits') {
+			$credits_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/credits.js';
+			wp_enqueue_script(
+				'rfs-ai-credits',
+				RFS_AI_SEO_PLUGIN_URL . 'admin/js/credits.js',
+				['jquery'],
+				RFS_AI_SEO_VERSION . '.' . (file_exists($credits_js) ? filemtime($credits_js) : '0'),
+				true
+			);
+
+			wp_localize_script(
+				'rfs-ai-credits',
+				'rfsAiCredits',
+				[
+					'ajaxUrl' => admin_url('admin-ajax.php'),
+					'nonce'   => wp_create_nonce('rfs_ai_seo_nonce'),
+					'strings' => [
+						'processing' => __('Processing...', 'rfs-ai-seo'),
+						'error'      => __('An error occurred. Please try again.', 'rfs-ai-seo'),
+						'redirecting' => __('Redirecting to Stripe...', 'rfs-ai-seo'),
+					],
+				]
+			);
+		}
+
+		// Calculate image cost estimate for localization.
+		$image_cost_estimate = Image_Generator::estimate_cost_per_image(
+			$this->settings->get_image_model()
+		);
+
 		// Localize admin script with AJAX URL and nonce.
 		wp_localize_script(
 			'rfs-ai-seo-admin',
@@ -361,6 +491,9 @@ final class RFS_AI_SEO {
 			[
 				'ajaxUrl' => admin_url('admin-ajax.php'),
 				'nonce' => wp_create_nonce('rfs_ai_seo_nonce'),
+				'imageCostEstimate' => $image_cost_estimate,
+				'imageCostEstimateFormatted' => $this->settings->format_cost($image_cost_estimate, 4),
+				'currencySymbol' => $this->settings->get_currency_symbol(),
 				'strings' => [
 					'generating' => __('Generating...', 'rfs-ai-seo'),
 					'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),
@@ -422,6 +555,9 @@ final class RFS_AI_SEO {
 
 		// Set default options.
 		self::set_default_options();
+
+		// Initialise credit balance with free allowance.
+		Credits_Manager::maybe_init_balance();
 
 		// Set DB version.
 		update_option('rfs_ai_seo_db_version', RFS_AI_SEO_VERSION);
