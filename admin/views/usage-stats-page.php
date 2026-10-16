@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
 
 <div class="wrap rfs-ai-seo-stats-page">
 	<h1><?php esc_html_e('Usage Statistics', 'rfs-ai-seo'); ?></h1>
+	<?php do_action('ats_ai_portal_credits_bar'); ?>
 
 	<?php
 	$settings = new \RFS_AI_SEO\Settings();

@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
 
 <div class="wrap rfs-ai-seo-bulk-generator">
 	<h1><?php esc_html_e('Bulk Generate Image Alt Text', 'rfs-ai-seo'); ?></h1>
+	<?php do_action('ats_ai_portal_credits_bar'); ?>
 
 	<div class="rfs-info-box">
 		<p>

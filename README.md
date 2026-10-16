@@ -8,38 +8,43 @@ WordPress plugin that generates SEO meta titles and descriptions for WooCommerce
 - WooCommerce 8.0+
 - PHP 8.0+
 - Yoast SEO
-- OpenAI API key
+- ATS AI Portal plugin (active), connected to a gateway account with credit
 
 ## Features
 
 - AI-powered meta title and description generation
-- AI image generation with DALL-E
+- AI image generation with gpt-image-1
 - Single item and bulk generation
 - SERP preview with character counters
 - Customizable prompt templates
 - ACF field support (including flexible content)
 - Usage tracking and statistics
 - Direct Yoast SEO integration
-- Multiple AI model support (GPT-4o, GPT-4o-mini, Nano Banana)
+- Text models: GPT-4o, GPT-4o-mini
 
 ## Installation
 
 1. Download the plugin zip
 2. Upload to WordPress via Plugins > Add New > Upload
-3. Activate the plugin
-4. Go to RFS AI SEO > Settings
-5. Enter your OpenAI API key (or define it in wp-config.php)
+3. Make sure the ATS AI Portal plugin is installed and active
+4. Activate the plugin
+5. Go to RFS AI SEO > Settings and review the content and image defaults
 6. Configure prompt templates as needed
 
-### API Key Configuration
+### Connecting to the AI Portal
 
-For better security, you can define your OpenAI API key in `wp-config.php` instead of storing it in the database:
+This plugin no longer stores any API key of its own. All AI requests go through the ATS AI Portal gateway plugin, which holds the OpenAI key and meters spend.
 
-```php
-define('RFS_AI_SEO_OPEN_AI_KEY', 'your-openai-api-key-here');
+Seal the gateway keys from the command line:
+
+```bash
+wp ats secret set gateway_key_content
+wp ats secret set gateway_key_images
 ```
 
-When the API key is defined in wp-config.php, it takes precedence over the database setting and cannot be changed through the admin interface.
+`gateway_key_content` covers text generation (meta, descriptions, alt text, the AI trainer), `gateway_key_images` covers product image generation. The dashboard shows "Not connected" until both are set.
+
+Top up credit any time from AI Tools > AI Credits in wp-admin. Every generation deducts its exact cost in pounds from that balance; there is no separate billing or currency setting in this plugin.
 
 ## Usage
 
@@ -66,7 +71,7 @@ When the API key is defined in wp-config.php, it takes precedence over the datab
 3. Add an "AI Image Description" for better prompts (optional)
 4. Click "Regenerate Image with AI"
 5. The original image is preserved and a new AI-generated version is created
-6. Configure image generation settings (model, size, quality, style) in Settings > API Settings
+6. Configure image generation settings (quality, size) in Settings > API Settings
 
 ## Configuration
 
@@ -83,6 +88,21 @@ Customize AI prompts in Settings > Prompt Templates. Available variables:
 
 List ACF field names in Settings > Content Settings to include them in generation.
 Use dot notation for nested fields: `flex_field.layout.sub_field`
+
+### API Settings
+
+- **Model** - text generation model, `gpt-4o` or `gpt-4o-mini`
+- **Image quality** - `low`, `medium` or `high`, passed straight to gpt-image-1
+- **Image size** - square (1024x1024), landscape (1536x1024) or portrait (1024x1536)
+
+### Content Defaults
+
+Starting values for the description generators, overridable per run on each bulk page and product meta box:
+
+- Company name, used to give the AI business context
+- Tone of voice (professional, friendly, technical)
+- Description length in words, short description length in sentences
+- Whether to include a bullet-point key features list
 
 ## Development Status
 

@@ -21,6 +21,7 @@ $stats = $logger->get_stats('month');
 
 <div class="wrap rfs-ai-seo-dashboard">
 	<h1><?php esc_html_e('RFS AI', 'rfs-ai-seo'); ?></h1>
+	<?php do_action('ats_ai_portal_credits_bar'); ?>
 
 	<?php if (!$has_api_key): ?>
 		<div class="notice notice-warning">
