@@ -43,7 +43,6 @@ ehthumbs.db
 *.tar.gz
 
 # Testing
-/tests/
 phpunit.xml
 .phpunit.result.cache
 

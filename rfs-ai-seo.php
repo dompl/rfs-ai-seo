@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants.
-define('RFS_AI_SEO_VERSION', '1.0.0');
+define('RFS_AI_SEO_VERSION', '2.0.0');
 define('RFS_AI_SEO_PLUGIN_FILE', __FILE__);
 define('RFS_AI_SEO_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('RFS_AI_SEO_PLUGIN_URL', plugin_dir_url(__FILE__));

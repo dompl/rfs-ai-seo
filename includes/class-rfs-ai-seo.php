@@ -19,6 +19,9 @@ if (!defined('ABSPATH')) {
  */
 final class RFS_AI_SEO {
 
+	/** Stored plugin version, compared with RFS_AI_SEO_VERSION on load. */
+	public const VERSION_OPTION = 'rfs_ai_seo_version';
+
 	/**
 	 * Plugin instance.
 	 *
@@ -85,13 +88,57 @@ final class RFS_AI_SEO {
 		new Description_Generator(); // Initialize description generator.
 		new Image_Generator(); // Initialize image generator.
 		new Alt_Text_Generator(); // Initialize alt text generator.
-		Credits_Manager::register_topup_handler(); // Secret top-up URL handler.
+		$this->maybe_upgrade();
 
 		// Enqueue admin assets.
 		add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
 
 		// Add admin notices hook.
 		add_action('admin_notices', [$this, 'display_dependency_warnings']);
+	}
+
+	/**
+	 * One-off housekeeping when the stored version differs from the code version.
+	 * Safe to run repeatedly.
+	 *
+	 * @return void
+	 */
+	public function maybe_upgrade(): void {
+		if (get_option(self::VERSION_OPTION) === RFS_AI_SEO_VERSION) {
+			return;
+		}
+
+		global $wpdb;
+
+		// Table changes (adds charged_gbp on 1.x installs).
+		self::create_tables();
+
+		// Options that 2.0.0 no longer reads: credit ledger, Gemini, Stripe, currency, multipliers, cap.
+		$patterns = ['rfs_ai_seo_credits_%', 'rfs_ai_seo_gemini_%', 'rfs_ai_seo_stripe_%'];
+		foreach ($patterns as $pattern) {
+			$names = $wpdb->get_col($wpdb->prepare("SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $pattern));
+			foreach ($names as $name) {
+				delete_option($name);
+			}
+		}
+		$fixed = [
+			'rfs_ai_seo_image_model',
+			'rfs_ai_seo_image_aspect_ratio',
+			'rfs_ai_seo_cost_multiplier',
+			'rfs_ai_seo_gpt_multiplier',
+			'rfs_ai_seo_spending_cap',
+			'rfs_ai_seo_display_currency',
+			'rfs_ai_seo_currency',
+			'rfs_ai_seo_topup_secret',
+			'rfs_ai_seo_openai_api_key',
+		];
+		foreach ($fixed as $name) {
+			delete_option($name);
+		}
+		delete_transient('rfs_ai_seo_exchange_rates');
+		delete_transient('rfs_ai_seo_connection_test');
+
+		update_option(self::VERSION_OPTION, RFS_AI_SEO_VERSION, false);
 	}
 
 	/**
@@ -158,6 +205,28 @@ final class RFS_AI_SEO {
 							sprintf(
 								/* translators: %s: plugin name */
 								__('<strong>%s</strong> requires Yoast SEO to be installed and activated.', 'rfs-ai-seo'),
+								'RFS AI SEO'
+							)
+						);
+						?>
+					</p>
+				</div>
+				<?php
+			});
+			$dependencies_met = false;
+		}
+
+		// Check that the ATS AI Portal plugin (gateway keys, credits) is active.
+		if (!class_exists('\RedFrogStudio\AtsAiPortal\Portal')) {
+			add_action('admin_notices', function () {
+				?>
+				<div class="notice notice-error">
+					<p>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: plugin name */
+								__('<strong>%s</strong> requires the ATS AI Portal plugin to be installed and activated.', 'rfs-ai-seo'),
 								'RFS AI SEO'
 							)
 						);
@@ -569,7 +638,7 @@ final class RFS_AI_SEO {
 	 *
 	 * @return void
 	 */
-	private static function create_tables(): void {
+	public static function create_tables(): void {
 		global $wpdb;
 
 		$table_name = $wpdb->prefix . 'rfs_ai_seo_log';
@@ -583,6 +652,7 @@ final class RFS_AI_SEO {
 			tokens_completion int(11) NOT NULL DEFAULT 0,
 			tokens_total int(11) NOT NULL DEFAULT 0,
 			model varchar(50) NOT NULL,
+			charged_gbp decimal(10,4) NOT NULL DEFAULT 0,
 			generated_title varchar(255) DEFAULT NULL,
 			generated_description text DEFAULT NULL,
 			user_id bigint(20) unsigned NOT NULL,
