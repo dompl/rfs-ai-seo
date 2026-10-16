@@ -330,13 +330,13 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$product_id) {
-			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
 		$options = $this->read_options_from_request();
@@ -359,14 +359,14 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 		$description = isset($_POST['description']) ? wp_kses_post($_POST['description']) : '';
 
 		if (!$product_id || empty($description)) {
-			wp_send_json_error(['message' => __('Invalid data.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid data.', 'rfs-ai-seo')]);
 		}
 
 		// Save original first.
@@ -375,7 +375,7 @@ class Description_Generator {
 		// Update product description.
 		$product = wc_get_product($product_id);
 		if (!$product) {
-			wp_send_json_error(['message' => __('Product not found.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'product_not_found', 'message' => __('Product not found.', 'rfs-ai-seo')]);
 		}
 
 		$product->set_description($description);
@@ -393,19 +393,19 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$product_id) {
-			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
 		$restored = $this->restore_original_description($product_id);
 
 		if (!$restored) {
-			wp_send_json_error(['message' => __('No original description found.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'no_original_description', 'message' => __('No original description found.', 'rfs-ai-seo')]);
 		}
 
 		// Get the restored description.
@@ -427,13 +427,13 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$product_id) {
-			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
 		$skip_existing = ($_POST['skip_existing'] ?? '1') === '1';
@@ -470,7 +470,7 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$category = isset($_POST['category']) ? absint($_POST['category']) : 0;
@@ -743,13 +743,13 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$product_id) {
-			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
 		$options = $this->read_options_from_request();
@@ -772,14 +772,14 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 		$description = isset($_POST['description']) ? wp_kses_post($_POST['description']) : '';
 
 		if (!$product_id || empty($description)) {
-			wp_send_json_error(['message' => __('Invalid data.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid data.', 'rfs-ai-seo')]);
 		}
 
 		// Save original first.
@@ -788,7 +788,7 @@ class Description_Generator {
 		// Update product short description.
 		$product = wc_get_product($product_id);
 		if (!$product) {
-			wp_send_json_error(['message' => __('Product not found.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'product_not_found', 'message' => __('Product not found.', 'rfs-ai-seo')]);
 		}
 
 		$product->set_short_description($description);
@@ -806,19 +806,19 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$product_id) {
-			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
 		$restored = $this->restore_original_short_description($product_id);
 
 		if (!$restored) {
-			wp_send_json_error(['message' => __('No original short description found.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'no_original_description', 'message' => __('No original short description found.', 'rfs-ai-seo')]);
 		}
 
 		// Get the restored short description.
@@ -840,13 +840,13 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$product_id) {
-			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
 		$skip_existing = ($_POST['skip_existing'] ?? '1') === '1';
@@ -883,7 +883,7 @@ class Description_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$category = isset($_POST['category']) ? absint($_POST['category']) : 0;

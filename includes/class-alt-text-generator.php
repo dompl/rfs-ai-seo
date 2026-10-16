@@ -233,20 +233,20 @@ class Alt_Text_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$attachment_id = isset($_POST['attachment_id']) ? absint($_POST['attachment_id']) : 0;
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$attachment_id || !$product_id) {
-			wp_send_json_error(['message' => __('Invalid attachment or product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid attachment or product ID.', 'rfs-ai-seo')]);
 		}
 
 		$result = $this->generate_for_image($attachment_id, $product_id);
 
 		if (is_wp_error($result)) {
-			wp_send_json_error(['message' => $result->get_error_message()]);
+			wp_send_json_error(['code' => $result->get_error_code(), 'message' => $result->get_error_message()]);
 		}
 
 		wp_send_json_success($result);
@@ -261,14 +261,14 @@ class Alt_Text_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$attachment_id = isset($_POST['attachment_id']) ? absint($_POST['attachment_id']) : 0;
 		$alt_text = isset($_POST['alt_text']) ? sanitize_text_field($_POST['alt_text']) : '';
 
 		if (!$attachment_id || empty($alt_text)) {
-			wp_send_json_error(['message' => __('Invalid data.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid data.', 'rfs-ai-seo')]);
 		}
 
 		update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
@@ -285,20 +285,20 @@ class Alt_Text_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$attachment_id = isset($_POST['attachment_id']) ? absint($_POST['attachment_id']) : 0;
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
 
 		if (!$attachment_id || !$product_id) {
-			wp_send_json_error(['message' => __('Invalid attachment or product ID.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'invalid_request', 'message' => __('Invalid attachment or product ID.', 'rfs-ai-seo')]);
 		}
 
 		$result = $this->generate_for_image($attachment_id, $product_id);
 
 		if (is_wp_error($result)) {
-			wp_send_json_error(['message' => $result->get_error_message()]);
+			wp_send_json_error(['code' => $result->get_error_code(), 'message' => $result->get_error_message()]);
 		}
 
 		// Auto-save alt text.
@@ -318,7 +318,7 @@ class Alt_Text_Generator {
 		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(['message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
+			wp_send_json_error(['code' => 'forbidden', 'message' => __('Insufficient permissions.', 'rfs-ai-seo')]);
 		}
 
 		$category = isset($_POST['category']) ? absint($_POST['category']) : 0;

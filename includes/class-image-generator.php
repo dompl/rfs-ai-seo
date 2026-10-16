@@ -291,6 +291,7 @@ class Image_Generator {
 		// Check capabilities.
 		if (!current_user_can('upload_files')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -302,6 +303,7 @@ class Image_Generator {
 
 		if (!$attachment_id) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Invalid attachment ID.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1158,6 +1160,7 @@ class Image_Generator {
 
 		if (!current_user_can('upload_files')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1169,6 +1172,7 @@ class Image_Generator {
 
 		if (!$post_id) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Invalid post ID.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1189,6 +1193,7 @@ class Image_Generator {
 
 		if (empty($prompt)) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Please select a prompt template or enter a custom prompt.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1269,6 +1274,7 @@ class Image_Generator {
 
 		if (!current_user_can('edit_posts')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1278,6 +1284,7 @@ class Image_Generator {
 
 		if (!$post_id || !$attachment_id) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Invalid post or attachment ID.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1294,6 +1301,7 @@ class Image_Generator {
 			]);
 		} else {
 			wp_send_json_error([
+				'code'    => 'set_featured_image_failed',
 				'message' => __('Failed to set featured image.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1416,6 +1424,7 @@ class Image_Generator {
 
 		if (!current_user_can('upload_files')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1427,6 +1436,7 @@ class Image_Generator {
 
 		if (!$attachment_id) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Invalid attachment ID.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1436,6 +1446,7 @@ class Image_Generator {
 
 		if (empty($prompt)) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Please select a prompt template or enter a custom prompt.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1457,6 +1468,7 @@ class Image_Generator {
 		$original_attachment = get_post($attachment_id);
 		if (!$original_attachment) {
 			wp_send_json_error([
+				'code'    => 'attachment_not_found',
 				'message' => __('Original attachment not found.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1518,6 +1530,7 @@ class Image_Generator {
 
 		if (!current_user_can('edit_products')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1530,6 +1543,7 @@ class Image_Generator {
 
 		if (!$product_id || !$old_attachment_id || !$new_attachment_id || !$image_type) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Missing required parameters.', 'rfs-ai-seo'),
 			]);
 		}
@@ -1551,6 +1565,7 @@ class Image_Generator {
 				$product = wc_get_product($product_id);
 				if (!$product) {
 					wp_send_json_error([
+						'code'    => 'product_not_found',
 						'message' => __('Product not found.', 'rfs-ai-seo'),
 					]);
 				}
@@ -1577,6 +1592,7 @@ class Image_Generator {
 				// Replace variation image.
 				if (!$variation_id) {
 					wp_send_json_error([
+						'code'    => 'invalid_request',
 						'message' => __('Variation ID is required.', 'rfs-ai-seo'),
 					]);
 				}
@@ -1592,6 +1608,7 @@ class Image_Generator {
 
 			default:
 				wp_send_json_error([
+					'code'    => 'invalid_request',
 					'message' => __('Invalid image type.', 'rfs-ai-seo'),
 				]);
 		}
@@ -1609,6 +1626,7 @@ class Image_Generator {
 
 		if (!current_user_can('manage_options')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}

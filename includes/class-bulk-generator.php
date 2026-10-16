@@ -52,6 +52,7 @@ class Bulk_Generator {
 		// Check capabilities.
 		if (!current_user_can('manage_options')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -343,6 +344,7 @@ class Bulk_Generator {
 		// Check capabilities.
 		if (!current_user_can('manage_options')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -355,6 +357,7 @@ class Bulk_Generator {
 
 		if (!$object_id) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Invalid object ID.', 'rfs-ai-seo'),
 			]);
 		}
@@ -382,6 +385,7 @@ class Bulk_Generator {
 
 		if (is_wp_error($result)) {
 			wp_send_json_error([
+				'code'    => $result->get_error_code(),
 				'message' => $result->get_error_message(),
 			]);
 		}
@@ -402,6 +406,7 @@ class Bulk_Generator {
 
 		if (!$saved) {
 			wp_send_json_error([
+				'code'    => 'save_failed',
 				'message' => __('Failed to save meta data.', 'rfs-ai-seo'),
 			]);
 		}

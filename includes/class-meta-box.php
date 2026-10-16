@@ -128,6 +128,7 @@ class Meta_Box {
 		// Check capabilities.
 		if (!current_user_can('edit_posts')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -138,6 +139,7 @@ class Meta_Box {
 
 		if (!$object_id) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Invalid object ID.', 'rfs-ai-seo'),
 			]);
 		}
@@ -148,6 +150,7 @@ class Meta_Box {
 
 		if (is_wp_error($result)) {
 			wp_send_json_error([
+				'code'    => $result->get_error_code(),
 				'message' => $result->get_error_message(),
 			]);
 		}
@@ -168,6 +171,7 @@ class Meta_Box {
 		// Check capabilities.
 		if (!current_user_can('edit_posts')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
@@ -180,6 +184,7 @@ class Meta_Box {
 
 		if (!$object_id || empty($title) || empty($description)) {
 			wp_send_json_error([
+				'code'    => 'invalid_request',
 				'message' => __('Invalid data provided.', 'rfs-ai-seo'),
 			]);
 		}
@@ -190,6 +195,7 @@ class Meta_Box {
 
 		if (!$saved) {
 			wp_send_json_error([
+				'code'    => 'save_failed',
 				'message' => __('Failed to save meta data.', 'rfs-ai-seo'),
 			]);
 		}

@@ -495,6 +495,7 @@ class Admin {
 		// Check capabilities.
 		if (!current_user_can('manage_options')) {
 			wp_send_json_error([
+				'code'    => 'forbidden',
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
 		}
