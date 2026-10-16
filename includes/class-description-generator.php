@@ -9,6 +9,8 @@
 
 namespace RFS_AI_SEO;
 
+use RedFrogStudio\AtsAiPortal\Portal;
+
 // Exit if accessed directly.
 if (!defined('ABSPATH')) {
 	exit;
@@ -18,6 +20,15 @@ if (!defined('ABSPATH')) {
  * Description_Generator class.
  */
 class Description_Generator {
+
+	/**
+	 * Tone key to tone-of-voice guidance text.
+	 */
+	public const TONE_GUIDE = [
+		'professional' => 'professional and confident, written for trade buyers',
+		'friendly' => 'warm and conversational, plain English',
+		'technical' => 'precise and specification-led, for engineers and specifiers',
+	];
 
 	/**
 	 * Constructor.
@@ -41,10 +52,11 @@ class Description_Generator {
 	/**
 	 * Generate description for a product.
 	 *
-	 * @param int $product_id Product ID.
+	 * @param int   $product_id Product ID.
+	 * @param array $options Content controls (tone, words, keywords, features).
 	 * @return array|WP_Error Result array or WP_Error on failure.
 	 */
-	public function generate_for_product(int $product_id): array|\WP_Error {
+	public function generate_for_product(int $product_id, array $options = []): array|\WP_Error {
 		// Get product.
 		$product = wc_get_product($product_id);
 		if (!$product) {
@@ -58,8 +70,9 @@ class Description_Generator {
 		// Get AI trainer context.
 		$business_context = get_option('rfs_ai_trainer_business_context', '');
 
-		// Build prompt.
-		$prompt = $this->build_description_prompt($data, $business_context);
+		// Resolve content controls and build prompt.
+		$opts = $this->resolve_options($options, 'description', $product_id);
+		$prompt = $this->build_description_prompt($data, $business_context, $opts);
 
 		// Get OpenAI client.
 		$settings = new Settings();
@@ -86,6 +99,7 @@ class Description_Generator {
 				'model' => $model,
 				'generated_title' => '',
 				'generated_description' => $result['description'],
+				'charged_gbp' => $result['charged_gbp'] ?? 0,
 			]
 		);
 
@@ -93,8 +107,81 @@ class Description_Generator {
 			'success' => true,
 			'description' => $result['description'],
 			'tokens' => $result['tokens'],
+			'charged_gbp' => $result['charged_gbp'] ?? null,
+			'balance_gbp' => Portal::balance(),
 			'current_description' => $product->get_description(),
 		];
+	}
+
+	/**
+	 * Resolve content controls for a generation request, falling back to the
+	 * plugin's saved settings and the product's Yoast focus keyword.
+	 *
+	 * @param array  $options Raw options from the caller (AJAX request or direct call).
+	 * @param string $kind 'description' or 'short'.
+	 * @param int    $product_id Product ID, used for the Yoast keyword fallback.
+	 * @return array Resolved options.
+	 */
+	private function resolve_options(array $options, string $kind, int $product_id): array {
+		$settings = new Settings();
+		$tone = (string) ($options['tone'] ?? '');
+		$keywords = trim((string) ($options['keywords'] ?? ''));
+		if ($keywords === '') {
+			$keywords = trim((string) get_post_meta($product_id, '_yoast_wpseo_focuskw', true));
+		}
+
+		$resolved = [
+			'tone' => array_key_exists($tone, self::TONE_GUIDE) ? $tone : $settings->get_content_tone(),
+			'keywords' => $keywords,
+			'features' => array_key_exists('features', $options) ? (bool) $options['features'] : $settings->get_include_features(),
+		];
+
+		if ($kind === 'short') {
+			$resolved['sentences'] = max(1, min(6, (int) ($options['sentences'] ?? 0) ?: $settings->get_short_sentences()));
+		} else {
+			$resolved['words'] = max(50, min(1000, (int) ($options['words'] ?? 0) ?: $settings->get_description_words()));
+		}
+
+		return $resolved;
+	}
+
+	/**
+	 * Whether a product already has content for the given kind, used by the
+	 * bulk generators' skip-existing option.
+	 *
+	 * @param int    $product_id Product ID.
+	 * @param string $kind 'description' or 'short'.
+	 * @return bool True when the product already has non-empty content.
+	 */
+	private function should_skip(int $product_id, string $kind): bool {
+		$product = wc_get_product($product_id);
+		if (!$product) {
+			return false;
+		}
+
+		$text = $kind === 'short' ? $product->get_short_description() : $product->get_description();
+
+		return trim(wp_strip_all_tags((string) $text)) !== '';
+	}
+
+	/**
+	 * Read the content controls posted by a generator or bulk-generator AJAX call.
+	 *
+	 * @return array Raw options, ready for resolve_options().
+	 */
+	private function read_options_from_request(): array {
+		$options = [
+			'tone' => sanitize_key($_POST['tone'] ?? ''),
+			'words' => absint($_POST['words'] ?? 0),
+			'sentences' => absint($_POST['sentences'] ?? 0),
+			'keywords' => sanitize_text_field(wp_unslash($_POST['keywords'] ?? '')),
+		];
+
+		if (isset($_POST['features'])) {
+			$options['features'] = $_POST['features'] === '1';
+		}
+
+		return $options;
 	}
 
 	/**
@@ -102,9 +189,10 @@ class Description_Generator {
 	 *
 	 * @param array  $data Product data.
 	 * @param string $business_context Business context from AI Trainer.
+	 * @param array  $options Content controls (tone, words, keywords, features).
 	 * @return string Prompt text.
 	 */
-	private function build_description_prompt(array $data, string $business_context): string {
+	public function build_description_prompt(array $data, string $business_context, array $options = []): string {
 		$prompt = "Generate a compelling product description for this WooCommerce product.\n\n";
 
 		// Add business context if available.
@@ -157,7 +245,22 @@ class Description_Generator {
 		$prompt .= "- If similar products exist, naturally mention and link to 1-2 relevant ones where appropriate\n";
 		$prompt .= "- If a current description exists, improve upon it while keeping valuable details\n";
 		$prompt .= "- Make it SEO-friendly but natural-sounding\n";
-		$prompt .= "- Length: 200-400 words\n";
+
+		$tone = self::TONE_GUIDE[$options['tone'] ?? 'professional'] ?? self::TONE_GUIDE['professional'];
+		$words = (int) ($options['words'] ?? 150);
+		$lines = [
+			"- Tone of voice: {$tone}",
+			"- Length: about {$words} words",
+		];
+		if (!empty($options['keywords'])) {
+			$lines[] = '- Work these focus keywords in naturally: ' . $options['keywords'];
+		}
+		$lines[] = !empty($options['features'])
+			? '- Include a bullet-point list of key features'
+			: '- Do not use bullet lists; write flowing paragraphs';
+		$control_block = implode("\n", $lines);
+
+		$prompt .= $control_block . "\n";
 		$prompt .= "- DO NOT include opening/closing <p> tags or wrapping divs - just the content HTML\n\n";
 
 		$prompt .= "RESPOND IN JSON FORMAT ONLY:\n";
@@ -236,10 +339,12 @@ class Description_Generator {
 			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
-		$result = $this->generate_for_product($product_id);
+		$options = $this->read_options_from_request();
+
+		$result = $this->generate_for_product($product_id, $options);
 
 		if (is_wp_error($result)) {
-			wp_send_json_error(['message' => $result->get_error_message()]);
+			wp_send_json_error(['message' => $result->get_error_message(), 'code' => $result->get_error_code()]);
 		}
 
 		wp_send_json_success($result);
@@ -331,10 +436,17 @@ class Description_Generator {
 			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
-		$result = $this->generate_for_product($product_id);
+		$skip_existing = ($_POST['skip_existing'] ?? '1') === '1';
+		if ($skip_existing && $this->should_skip($product_id, 'description')) {
+			wp_send_json_success(['skipped' => true, 'message' => __('Already has content', 'rfs-ai-seo')]);
+		}
+
+		$options = $this->read_options_from_request();
+
+		$result = $this->generate_for_product($product_id, $options);
 
 		if (is_wp_error($result)) {
-			wp_send_json_error(['message' => $result->get_error_message()]);
+			wp_send_json_error(['message' => $result->get_error_message(), 'code' => $result->get_error_code()]);
 		}
 
 		// Auto-save the description.
@@ -443,10 +555,11 @@ class Description_Generator {
 	/**
 	 * Generate short description for a product.
 	 *
-	 * @param int $product_id Product ID.
+	 * @param int   $product_id Product ID.
+	 * @param array $options Content controls (tone, sentences, keywords, features).
 	 * @return array|WP_Error Result array or WP_Error on failure.
 	 */
-	public function generate_short_description_for_product(int $product_id): array|\WP_Error {
+	public function generate_short_description_for_product(int $product_id, array $options = []): array|\WP_Error {
 		// Get product.
 		$product = wc_get_product($product_id);
 		if (!$product) {
@@ -460,8 +573,9 @@ class Description_Generator {
 		// Get AI trainer context.
 		$business_context = get_option('rfs_ai_trainer_business_context', '');
 
-		// Build prompt.
-		$prompt = $this->build_short_description_prompt($data, $business_context);
+		// Resolve content controls and build prompt.
+		$opts = $this->resolve_options($options, 'short', $product_id);
+		$prompt = $this->build_short_description_prompt($data, $business_context, $opts);
 
 		// Get OpenAI client.
 		$settings = new Settings();
@@ -488,6 +602,7 @@ class Description_Generator {
 				'model' => $model,
 				'generated_title' => '',
 				'generated_description' => $result['description'],
+				'charged_gbp' => $result['charged_gbp'] ?? 0,
 			]
 		);
 
@@ -495,6 +610,8 @@ class Description_Generator {
 			'success' => true,
 			'description' => $result['description'],
 			'tokens' => $result['tokens'],
+			'charged_gbp' => $result['charged_gbp'] ?? null,
+			'balance_gbp' => Portal::balance(),
 			'current_description' => $product->get_short_description(),
 		];
 	}
@@ -504,9 +621,10 @@ class Description_Generator {
 	 *
 	 * @param array  $data Product data.
 	 * @param string $business_context Business context from AI Trainer.
+	 * @param array  $options Content controls (tone, sentences, keywords, features).
 	 * @return string Prompt text.
 	 */
-	private function build_short_description_prompt(array $data, string $business_context): string {
+	public function build_short_description_prompt(array $data, string $business_context, array $options = []): string {
 		$prompt = "Generate a SHORT product description for this WooCommerce product.\n\n";
 
 		// Add business context if available.
@@ -545,8 +663,18 @@ class Description_Generator {
 		$prompt .= "- Use the business context to maintain brand voice\n";
 		$prompt .= "- If a current short description exists, improve upon it\n";
 		$prompt .= "- Make it attention-grabbing and SEO-friendly\n";
-		$prompt .= "- Length: 20-50 words (KEEP IT SHORT!)\n";
-		$prompt .= "- No bullet points or lists, just 1-2 short sentences\n\n";
+
+		$tone = self::TONE_GUIDE[$options['tone'] ?? 'professional'] ?? self::TONE_GUIDE['professional'];
+		$sentences = (int) ($options['sentences'] ?? 2);
+		$lines = [
+			"- Tone of voice: {$tone}",
+			"- Length: exactly {$sentences} sentences",
+		];
+		if (!empty($options['keywords'])) {
+			$lines[] = '- Work these focus keywords in naturally: ' . $options['keywords'];
+		}
+		$lines[] = '- No bullet points or lists, just flowing sentences';
+		$prompt .= implode("\n", $lines) . "\n\n";
 
 		$prompt .= "RESPOND IN JSON FORMAT ONLY:\n";
 		$prompt .= '{"description": "your short product description here"}';
@@ -624,10 +752,12 @@ class Description_Generator {
 			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
-		$result = $this->generate_short_description_for_product($product_id);
+		$options = $this->read_options_from_request();
+
+		$result = $this->generate_short_description_for_product($product_id, $options);
 
 		if (is_wp_error($result)) {
-			wp_send_json_error(['message' => $result->get_error_message()]);
+			wp_send_json_error(['message' => $result->get_error_message(), 'code' => $result->get_error_code()]);
 		}
 
 		wp_send_json_success($result);
@@ -719,10 +849,17 @@ class Description_Generator {
 			wp_send_json_error(['message' => __('Invalid product ID.', 'rfs-ai-seo')]);
 		}
 
-		$result = $this->generate_short_description_for_product($product_id);
+		$skip_existing = ($_POST['skip_existing'] ?? '1') === '1';
+		if ($skip_existing && $this->should_skip($product_id, 'short')) {
+			wp_send_json_success(['skipped' => true, 'message' => __('Already has content', 'rfs-ai-seo')]);
+		}
+
+		$options = $this->read_options_from_request();
+
+		$result = $this->generate_short_description_for_product($product_id, $options);
 
 		if (is_wp_error($result)) {
-			wp_send_json_error(['message' => $result->get_error_message()]);
+			wp_send_json_error(['message' => $result->get_error_message(), 'code' => $result->get_error_code()]);
 		}
 
 		// Auto-save the short description.

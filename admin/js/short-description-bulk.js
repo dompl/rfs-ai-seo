@@ -17,8 +17,11 @@
 		results: {
 			success: 0,
 			failed: 0,
-			tokens: 0
+			tokens: 0,
+			skipped: 0,
+			charged: 0
 		},
+		halted: false,
 
 		/**
 		 * Initialize
@@ -49,6 +52,9 @@
 
 			// Close button
 			$('#rfs_short_desc_bulk_close_btn').on('click', () => this.closeProgress());
+
+			// Resume button (after an out-of-credit or unavailable halt)
+			$('#rfs_short_desc_bulk_resume_btn').on('click', () => this.resume());
 
 			// Enter key in search
 			$('#rfs_short_desc_bulk_search').on('keypress', (e) => {
@@ -225,12 +231,16 @@
 			this.itemsToGenerate = itemsToGenerate;
 			this.currentIndex = 0;
 			this.isRunning = true;
-			this.results = { success: 0, failed: 0, tokens: 0 };
+			this.halted = false;
+			this.results = { success: 0, failed: 0, tokens: 0, skipped: 0, charged: 0 };
 
 			// Show progress panel
 			$('#rfs_short_desc_bulk_progress').addClass('active').show();
 			$('#rfs_short_desc_completion_summary').hide();
 			$('#rfs_short_desc_progress_log').empty();
+			$('#rfs_short_desc_bulk_out_of_credit, #rfs_short_desc_bulk_paused').hide();
+			$('#rfs_short_desc_bulk_stop_btn').show();
+			$('#rfs_short_desc_bulk_total').text('');
 
 			// Start processing
 			this.processNext();
@@ -259,28 +269,71 @@
 				data: {
 					action: 'rfs_ai_bulk_generate_short_description',
 					nonce: rfsAiSeo.nonce,
-					product_id: productId
+					product_id: productId,
+					tone: $('#rfs_short_desc_bulk_tone').val(),
+					sentences: $('#rfs_short_desc_bulk_sentences').val(),
+					skip_existing: $('#rfs_short_desc_bulk_skip_existing').is(':checked') ? '1' : '0'
 				},
 				success: (response) => {
+					if (response.success && response.data.skipped) {
+						this.results.skipped++;
+						this.logResult(itemName, true, response.data.message || 'Already has content');
+						return;
+					}
+
 					if (response.success) {
 						this.results.success++;
 						this.results.tokens += response.data.tokens.total || 0;
+						this.results.charged += response.data.charged_gbp || 0;
+						$('#rfs_short_desc_bulk_total').text('Spent: £' + this.results.charged.toFixed(2));
 						this.logResult(itemName, true, 'Generated successfully');
-					} else {
-						this.results.failed++;
-						this.logResult(itemName, false, response.data.message || 'Unknown error');
+						return;
 					}
+
+					const code = response.data && response.data.code;
+
+					if (code === 'ats_portal_out_of_credit') {
+						this.halted = true;
+						this.isRunning = false;
+						this.logResult(itemName, false, response.data.message || 'Out of AI credit');
+						$('#rfs_short_desc_bulk_out_of_credit').show();
+						return;
+					}
+
+					if (code === 'ats_portal_unavailable') {
+						this.halted = true;
+						this.isRunning = false;
+						this.logResult(itemName, false, response.data.message || 'AI service unavailable');
+						$('#rfs_short_desc_bulk_paused').show();
+						return;
+					}
+
+					this.results.failed++;
+					this.logResult(itemName, false, (response.data && response.data.message) || 'Unknown error');
 				},
 				error: () => {
 					this.results.failed++;
 					this.logResult(itemName, false, 'AJAX error');
 				},
 				complete: () => {
+					if (this.halted) {
+						return;
+					}
 					this.currentIndex++;
 					// Continue to next item
 					setTimeout(() => this.processNext(), 500);
 				}
 			});
+		},
+
+		/**
+		 * Resume after an out-of-credit or unavailable halt
+		 */
+		resume() {
+			$('#rfs_short_desc_bulk_out_of_credit, #rfs_short_desc_bulk_paused').hide();
+			this.halted = false;
+			this.isRunning = true;
+			this.processNext();
 		},
 
 		/**
@@ -335,6 +388,7 @@
 			// Update summary
 			$('#rfs_short_desc_summary_total').text(this.currentIndex);
 			$('#rfs_short_desc_summary_success').text(this.results.success);
+			$('#rfs_short_desc_summary_skipped').text(this.results.skipped);
 			$('#rfs_short_desc_summary_failed').text(this.results.failed);
 			$('#rfs_short_desc_summary_tokens').text(this.results.tokens);
 

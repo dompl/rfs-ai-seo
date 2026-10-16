@@ -56,6 +56,7 @@
 			// Show spinner
 			$('#rfs_description_spinner').css('display', 'inline-block');
 			$('#rfs_generate_description_btn').prop('disabled', true);
+			$('#rfs_description_generate_error').hide().empty();
 
 			// AJAX call
 			$.ajax({
@@ -64,13 +65,16 @@
 				data: {
 					action: 'rfs_ai_generate_description',
 					nonce: rfsAiSeo.nonce,
-					product_id: productId
+					product_id: productId,
+					tone: $('#rfs_description_tone').val(),
+					words: $('#rfs_description_words').val(),
+					keywords: $('#rfs_description_keywords').val()
 				},
 				success: (response) => {
 					if (response.success) {
 						this.showPreview(response.data);
 					} else {
-						alert(response.data.message || rfsAiSeo.strings.error);
+						this.showGenerateError(response.data);
 					}
 				},
 				error: () => {
@@ -81,6 +85,29 @@
 					$('#rfs_generate_description_btn').prop('disabled', false);
 				}
 			});
+		},
+
+		/**
+		 * Show a generation error in the inline notice, with a Top up link when out of credit
+		 */
+		showGenerateError(data) {
+			const message = (data && data.message) || rfsAiSeo.strings.error;
+			const box = $('#rfs_description_generate_error');
+
+			if (!box.length) {
+				alert(message);
+				return;
+			}
+
+			box.empty().append($('<span>').text(message));
+
+			if (data && data.code === 'ats_portal_out_of_credit' && rfsAiSeo.creditsUrl) {
+				box.append(' ').append(
+					$('<a>', { href: rfsAiSeo.creditsUrl, target: '_blank', class: 'button button-small' }).text('Top up')
+				);
+			}
+
+			box.show();
 		},
 
 		/**
@@ -101,9 +128,14 @@
 
 			// Show token usage
 			if (data.tokens) {
-				const tokenInfo = `Tokens used: ${data.tokens.total} (${data.tokens.prompt} prompt + ${data.tokens.completion} completion)`;
+				let tokenInfo = `Tokens used: ${data.tokens.total} (${data.tokens.prompt} prompt + ${data.tokens.completion} completion)`;
+				if (data.charged_gbp) {
+					tokenInfo += `, Charged £${Number(data.charged_gbp).toFixed(3)}`;
+				}
 				$('#rfs_description_token_info').text(tokenInfo);
 			}
+
+			$('#rfs_description_generate_error').hide().empty();
 		},
 
 		/**

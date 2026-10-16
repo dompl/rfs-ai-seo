@@ -126,12 +126,34 @@ if (!defined('ABSPATH')) {
 		<?php endif; ?>
 	</div>
 
+	<?php
+	$rfs_settings = new \RFS_AI_SEO\Settings();
+	$rfs_connected = \RedFrogStudio\AtsAiPortal\Portal::has_key('content');
+	$rfs_focuskw = get_post_meta($post->ID, '_yoast_wpseo_focuskw', true);
+	?>
+	<div class="rfs-generate-controls" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:8px 0">
+		<label><?php esc_html_e('Tone', 'rfs-ai-seo'); ?><br>
+			<select id="rfs_description_tone">
+				<?php foreach (\RFS_AI_SEO\Settings::tones() as $value => $label) : ?>
+					<option value="<?php echo esc_attr($value); ?>" <?php selected($rfs_settings->get_content_tone(), $value); ?>><?php echo esc_html($label); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<label><?php esc_html_e('Words', 'rfs-ai-seo'); ?><br>
+			<input type="number" id="rfs_description_words" min="50" max="1000" step="10" value="<?php echo esc_attr((string) $rfs_settings->get_description_words()); ?>" style="width:90px">
+		</label>
+		<label><?php esc_html_e('Keywords', 'rfs-ai-seo'); ?><br>
+			<input type="text" id="rfs_description_keywords" value="<?php echo esc_attr($rfs_focuskw); ?>" style="width:180px">
+		</label>
+	</div>
+
 	<!-- Generate Description Button -->
 	<div class="rfs-generate-btn-wrap">
-		<button type="button" class="button button-secondary button-large" id="rfs_generate_description_btn">
+		<button type="button" class="button button-secondary button-large" id="rfs_generate_description_btn" <?php disabled(!$rfs_connected); ?>>
 			<?php esc_html_e('Generate Description with AI', 'rfs-ai-seo'); ?>
 		</button>
 		<span class="spinner" id="rfs_description_spinner"></span>
+		<div class="notice notice-error inline" id="rfs_description_generate_error" style="display:none"></div>
 	</div>
 
 	<!-- Description Preview Panel (hidden by default) -->
@@ -160,13 +182,13 @@ if (!defined('ABSPATH')) {
 
 		<div class="rfs-ai-seo-actions">
 			<button type="button" class="button button-primary" id="rfs_save_description_btn">
-				<?php esc_html_e('Save Description', 'rfs-ai-seo'); ?>
+				<?php esc_html_e('Apply', 'rfs-ai-seo'); ?>
 			</button>
 			<button type="button" class="button" id="rfs_regenerate_description_btn">
 				<?php esc_html_e('Regenerate', 'rfs-ai-seo'); ?>
 			</button>
 			<button type="button" class="button" id="rfs_cancel_description_btn">
-				<?php esc_html_e('Cancel', 'rfs-ai-seo'); ?>
+				<?php esc_html_e('Discard', 'rfs-ai-seo'); ?>
 			</button>
 			<span class="spinner" id="rfs_save_description_spinner"></span>
 		</div>
@@ -206,12 +228,34 @@ if (!defined('ABSPATH')) {
 		<?php endif; ?>
 	</div>
 
+	<?php
+	$rfs_settings = new \RFS_AI_SEO\Settings();
+	$rfs_connected = \RedFrogStudio\AtsAiPortal\Portal::has_key('content');
+	$rfs_focuskw = get_post_meta($post->ID, '_yoast_wpseo_focuskw', true);
+	?>
+	<div class="rfs-generate-controls" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:8px 0">
+		<label><?php esc_html_e('Tone', 'rfs-ai-seo'); ?><br>
+			<select id="rfs_short_description_tone">
+				<?php foreach (\RFS_AI_SEO\Settings::tones() as $value => $label) : ?>
+					<option value="<?php echo esc_attr($value); ?>" <?php selected($rfs_settings->get_content_tone(), $value); ?>><?php echo esc_html($label); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<label><?php esc_html_e('Sentences', 'rfs-ai-seo'); ?><br>
+			<input type="number" id="rfs_short_description_sentences" min="1" max="6" step="1" value="<?php echo esc_attr((string) $rfs_settings->get_short_sentences()); ?>" style="width:90px">
+		</label>
+		<label><?php esc_html_e('Keywords', 'rfs-ai-seo'); ?><br>
+			<input type="text" id="rfs_short_description_keywords" value="<?php echo esc_attr($rfs_focuskw); ?>" style="width:180px">
+		</label>
+	</div>
+
 	<!-- Generate Short Description Button -->
 	<div class="rfs-generate-btn-wrap">
-		<button type="button" class="button button-secondary button-large" id="rfs_generate_short_description_btn">
+		<button type="button" class="button button-secondary button-large" id="rfs_generate_short_description_btn" <?php disabled(!$rfs_connected); ?>>
 			<?php esc_html_e('Generate Short Description with AI', 'rfs-ai-seo'); ?>
 		</button>
 		<span class="spinner" id="rfs_short_description_spinner"></span>
+		<div class="notice notice-error inline" id="rfs_short_description_generate_error" style="display:none"></div>
 	</div>
 
 	<!-- Short Description Preview Panel (hidden by default) -->
@@ -226,13 +270,13 @@ if (!defined('ABSPATH')) {
 
 		<div class="rfs-ai-seo-actions">
 			<button type="button" class="button button-primary" id="rfs_save_short_description_btn">
-				<?php esc_html_e('Save Short Description', 'rfs-ai-seo'); ?>
+				<?php esc_html_e('Apply', 'rfs-ai-seo'); ?>
 			</button>
 			<button type="button" class="button" id="rfs_regenerate_short_description_btn">
 				<?php esc_html_e('Regenerate', 'rfs-ai-seo'); ?>
 			</button>
 			<button type="button" class="button" id="rfs_cancel_short_description_btn">
-				<?php esc_html_e('Cancel', 'rfs-ai-seo'); ?>
+				<?php esc_html_e('Discard', 'rfs-ai-seo'); ?>
 			</button>
 			<span class="spinner" id="rfs_save_short_description_spinner"></span>
 		</div>

@@ -14,6 +14,39 @@ if (!defined('ABSPATH')) {
 <div class="wrap rfs-ai-seo-bulk-generator">
 	<h1><?php esc_html_e('Bulk Generate Product Short Descriptions', 'rfs-ai-seo'); ?></h1>
 
+	<?php
+	$settings = new \RFS_AI_SEO\Settings();
+	$estimate = (new \RFS_AI_SEO\Usage_Logger())->average_charge('product_short_description');
+	$connected = \RedFrogStudio\AtsAiPortal\Portal::has_key('content');
+	do_action('ats_ai_portal_credits_bar');
+	?>
+	<div class="rfs-bulk-controls" style="display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin:12px 0">
+		<label><?php esc_html_e('Tone', 'rfs-ai-seo'); ?><br>
+			<select id="rfs_short_desc_bulk_tone">
+				<?php foreach (\RFS_AI_SEO\Settings::tones() as $value => $label) : ?>
+					<option value="<?php echo esc_attr($value); ?>" <?php selected($settings->get_content_tone(), $value); ?>><?php echo esc_html($label); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<label><?php esc_html_e('Sentences', 'rfs-ai-seo'); ?><br>
+			<input type="number" id="rfs_short_desc_bulk_sentences" min="1" max="6" step="1" value="<?php echo esc_attr((string) $settings->get_short_sentences()); ?>" style="width:90px">
+		</label>
+		<label><input type="checkbox" id="rfs_short_desc_bulk_skip_existing" checked> <?php esc_html_e('Skip products that already have a short description', 'rfs-ai-seo'); ?></label>
+		<span id="rfs_short_desc_bulk_estimate" class="description">
+			<?php if ($estimate) : ?>
+				<?php printf(esc_html__('About %s per product, based on your last 20', 'rfs-ai-seo'), esc_html($settings->format_gbp($estimate))); ?>
+			<?php endif; ?>
+		</span>
+	</div>
+	<div id="rfs_short_desc_bulk_out_of_credit" class="notice notice-error inline" style="display:none"><p>
+		<?php esc_html_e('Out of AI credit. The run has stopped.', 'rfs-ai-seo'); ?>
+		<a class="button button-primary" href="<?php echo esc_url(\RedFrogStudio\AtsAiPortal\Portal::credits_url()); ?>"><?php esc_html_e('Top up', 'rfs-ai-seo'); ?></a>
+	</p></div>
+	<div id="rfs_short_desc_bulk_paused" class="notice notice-warning inline" style="display:none"><p>
+		<?php esc_html_e('AI service unavailable. The run is paused.', 'rfs-ai-seo'); ?>
+		<button type="button" class="button" id="rfs_short_desc_bulk_resume_btn"><?php esc_html_e('Resume', 'rfs-ai-seo'); ?></button>
+	</p></div>
+
 	<div class="rfs-info-box">
 		<p>
 			<?php esc_html_e('Generate AI-powered short product descriptions for multiple products at once. Short descriptions are concise summaries (20-50 words) that appear in product listings and catalog views.', 'rfs-ai-seo'); ?>
@@ -69,10 +102,10 @@ if (!defined('ABSPATH')) {
 				<span id="rfs_short_desc_bulk_selected_count" style="margin-left: 10px;"></span>
 			</div>
 			<div class="alignright actions">
-				<button type="button" class="button button-primary" id="rfs_short_desc_bulk_generate_selected" disabled>
+				<button type="button" class="button button-primary" id="rfs_short_desc_bulk_generate_selected" disabled <?php disabled(!$connected); ?>>
 					<?php esc_html_e('Generate for Selected', 'rfs-ai-seo'); ?>
 				</button>
-				<button type="button" class="button button-secondary" id="rfs_short_desc_bulk_generate_all" disabled>
+				<button type="button" class="button button-secondary" id="rfs_short_desc_bulk_generate_all" disabled <?php disabled(!$connected); ?>>
 					<?php esc_html_e('Generate for All Filtered', 'rfs-ai-seo'); ?>
 				</button>
 			</div>
@@ -116,6 +149,7 @@ if (!defined('ABSPATH')) {
 			<button type="button" class="button button-secondary" id="rfs_short_desc_bulk_stop_btn">
 				<?php esc_html_e('Stop', 'rfs-ai-seo'); ?>
 			</button>
+			<span id="rfs_short_desc_bulk_total" class="description" style="margin-left:8px"></span>
 		</div>
 
 		<div class="rfs-ai-seo-progress-bar-container">
@@ -175,6 +209,10 @@ if (!defined('ABSPATH')) {
 			<p>
 				<strong><?php esc_html_e('Failed:', 'rfs-ai-seo'); ?></strong>
 				<span id="rfs_short_desc_summary_failed">0</span>
+			</p>
+			<p>
+				<strong><?php esc_html_e('Skipped:', 'rfs-ai-seo'); ?></strong>
+				<span id="rfs_short_desc_summary_skipped">0</span>
 			</p>
 			<p>
 				<strong><?php esc_html_e('Total Tokens:', 'rfs-ai-seo'); ?></strong>
