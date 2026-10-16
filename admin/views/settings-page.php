@@ -101,6 +101,32 @@ $image_prompts          = $settings->get_image_prompts();
 				</tr>
 			</table>
 
+			<hr>
+			<h2><?php esc_html_e( 'Image generation', 'rfs-ai-seo' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Product images are generated with OpenAI gpt-image-1 through the Red Frog AI portal. Each image is charged to the AI Credits balance.', 'rfs-ai-seo' ); ?></p>
+			<table class="form-table">
+				<tr>
+					<th scope="row"><label for="rfs_ai_seo_image_quality"><?php esc_html_e( 'Quality', 'rfs-ai-seo' ); ?></label></th>
+					<td>
+						<select name="rfs_ai_seo_image_quality" id="rfs_ai_seo_image_quality">
+							<?php foreach ( [ 'low' => __( 'Low (cheapest)', 'rfs-ai-seo' ), 'medium' => __( 'Medium', 'rfs-ai-seo' ), 'high' => __( 'High (most detail)', 'rfs-ai-seo' ) ] as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings->get_image_quality(), $value ); ?>><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="rfs_ai_seo_image_size"><?php esc_html_e( 'Size', 'rfs-ai-seo' ); ?></label></th>
+					<td>
+						<select name="rfs_ai_seo_image_size" id="rfs_ai_seo_image_size">
+							<?php foreach ( [ '1024x1024' => __( 'Square 1024 × 1024', 'rfs-ai-seo' ), '1536x1024' => __( 'Landscape 1536 × 1024', 'rfs-ai-seo' ), '1024x1536' => __( 'Portrait 1024 × 1536', 'rfs-ai-seo' ) ] as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings->get_image_size(), $value ); ?>><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+			</table>
+
 		<?php elseif ( $active_tab === 'prompts' ): ?>
 			<!-- Prompt Templates Tab -->
 			<table class="form-table">
@@ -218,23 +244,6 @@ $image_prompts          = $settings->get_image_prompts();
 			<table class="form-table">
 				<tr>
 					<th scope="row">
-						<label for="rfs_ai_seo_company_name">
-							<?php esc_html_e( 'Company Name', 'rfs-ai-seo' ); ?>
-						</label>
-					</th>
-					<td>
-						<input type="text"
-							   name="rfs_ai_seo_company_name"
-							   id="rfs_ai_seo_company_name"
-							   value="<?php echo esc_attr( get_option( 'rfs_ai_seo_company_name', '' ) ); ?>"
-							   class="regular-text">
-						<p class="description">
-							<?php esc_html_e( 'Used in alt text generation to include your brand name.', 'rfs-ai-seo' ); ?>
-						</p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
 						<label for="rfs_ai_seo_title_max_length">
 							<?php esc_html_e( 'Maximum Title Length', 'rfs-ai-seo' ); ?>
 						</label>
@@ -301,6 +310,42 @@ $image_prompts          = $settings->get_image_prompts();
 							<?php esc_html_e( 'Use dot notation for nested fields (e.g., "flex_field.layout.sub_field").', 'rfs-ai-seo' ); ?>
 						</p>
 					</td>
+				</tr>
+			</table>
+
+			<hr>
+			<h2><?php esc_html_e( 'Content defaults', 'rfs-ai-seo' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Starting values for the description generators. Each bulk page and product box can override them per run.', 'rfs-ai-seo' ); ?></p>
+			<table class="form-table">
+				<tr>
+					<th scope="row"><label for="rfs_ai_seo_company_name"><?php esc_html_e( 'Company name', 'rfs-ai-seo' ); ?></label></th>
+					<td><input type="text" class="regular-text" name="rfs_ai_seo_company_name" id="rfs_ai_seo_company_name" value="<?php echo esc_attr( get_option( 'rfs_ai_seo_company_name', '' ) ); ?>"></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="rfs_ai_seo_content_tone"><?php esc_html_e( 'Tone of voice', 'rfs-ai-seo' ); ?></label></th>
+					<td>
+						<select name="rfs_ai_seo_content_tone" id="rfs_ai_seo_content_tone">
+							<?php foreach ( \RFS_AI_SEO\Settings::tones() as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings->get_content_tone(), $value ); ?>><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="rfs_ai_seo_description_words"><?php esc_html_e( 'Description length (words)', 'rfs-ai-seo' ); ?></label></th>
+					<td><input type="number" min="50" max="1000" step="10" name="rfs_ai_seo_description_words" id="rfs_ai_seo_description_words" value="<?php echo esc_attr( (string) $settings->get_description_words() ); ?>"></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="rfs_ai_seo_short_sentences"><?php esc_html_e( 'Short description (sentences)', 'rfs-ai-seo' ); ?></label></th>
+					<td><input type="number" min="1" max="6" name="rfs_ai_seo_short_sentences" id="rfs_ai_seo_short_sentences" value="<?php echo esc_attr( (string) $settings->get_short_sentences() ); ?>"></td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Key features list', 'rfs-ai-seo' ); ?></th>
+					<td><label><input type="checkbox" name="rfs_ai_seo_include_features" value="1" <?php checked( $settings->get_include_features() ); ?>> <?php esc_html_e( 'Include a bullet-point list of key features in descriptions', 'rfs-ai-seo' ); ?></label></td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Business context', 'rfs-ai-seo' ); ?></th>
+					<td><p class="description"><?php printf( wp_kses_post( __( 'Set on the <a href="%s">AI Trainer</a> page. It is sent with every description request.', 'rfs-ai-seo' ) ), esc_url( admin_url( 'admin.php?page=rfs-ai-trainer' ) ) ); ?></p></td>
 				</tr>
 			</table>
 

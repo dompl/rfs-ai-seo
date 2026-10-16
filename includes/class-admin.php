@@ -368,6 +368,19 @@ class Admin {
 			update_option('rfs_ai_seo_openai_model', sanitize_text_field($_POST['rfs_ai_seo_openai_model']));
 		}
 
+		// Save image and content default settings.
+		foreach (['rfs_ai_seo_image_quality', 'rfs_ai_seo_image_size', 'rfs_ai_seo_content_tone'] as $name) {
+			if (isset($_POST[$name])) {
+				update_option($name, sanitize_text_field(wp_unslash($_POST[$name])));
+			}
+		}
+		foreach (['rfs_ai_seo_description_words', 'rfs_ai_seo_short_sentences'] as $name) {
+			if (isset($_POST[$name])) {
+				update_option($name, (string) absint($_POST[$name]));
+			}
+		}
+		update_option('rfs_ai_seo_include_features', empty($_POST['rfs_ai_seo_include_features']) ? '0' : '1');
+
 		// Save prompt templates.
 		if (isset($_POST['rfs_ai_seo_prompt_product'])) {
 			update_option('rfs_ai_seo_prompt_product', sanitize_textarea_field($_POST['rfs_ai_seo_prompt_product']));
