@@ -51,13 +51,7 @@ rfs_mock_http([rfs_response(200, 'not json at all')]);
 $result = (new OpenAI_Client())->generate_description('x');
 rfs_assert_same('invalid_response', $result->get_error_code(), 'non-JSON 200 body');
 
-// 6. No key: ats_portal_no_key without any HTTP call.
-add_filter('pre_option_rfs_ai_seo_openai_model', fn() => 'gpt-4o');
-rfs_mock_http([$ok]);
-add_filter('ats_ai_portal_connected', '__return_false'); // only affects CreditsBar; the client checks has_key directly
-remove_filter('ats_ai_portal_connected', '__return_false');
-
-// 7. test_connection() uses the free /models endpoint.
+// 6. test_connection() uses the free /models endpoint.
 rfs_mock_http([rfs_response(200, ['data' => [['id' => 'gpt-4o']]])]);
 rfs_assert_same(true, (new OpenAI_Client())->test_connection(), 'test_connection true on 200');
 $call = rfs_last_call();
