@@ -522,6 +522,7 @@ final class RFS_AI_SEO {
 				'nonce' => wp_create_nonce('rfs_ai_seo_nonce'),
 				'imageEstimate' => (new Usage_Logger())->average_charge('image_generation'),
 				'creditsUrl' => \RedFrogStudio\AtsAiPortal\Portal::credits_url(),
+				'contentConnected' => \RedFrogStudio\AtsAiPortal\Portal::has_key('content'),
 				'strings' => [
 					'generating' => __('Generating...', 'rfs-ai-seo'),
 					'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),

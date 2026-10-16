@@ -121,7 +121,7 @@
 			if (data.tokens) {
 				let tokenInfo = `Tokens used: ${data.tokens.total} (${data.tokens.prompt} prompt + ${data.tokens.completion} completion)`;
 				if (data.charged_gbp) {
-					tokenInfo += `, Charged £${Number(data.charged_gbp).toFixed(3)}`;
+					tokenInfo += `, Charged £${Number(data.charged_gbp).toFixed(2)}`;
 				}
 				$('#rfs_short_description_token_info').text(tokenInfo);
 			}

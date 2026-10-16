@@ -180,8 +180,9 @@
 				count > 0 ? `Selected: ${count}` : ''
 			);
 
-			$('#rfs_short_desc_bulk_generate_selected').prop('disabled', count === 0);
-			$('#rfs_short_desc_bulk_generate_all').prop('disabled', this.items.length === 0);
+			const connected = !!(window.rfsAiSeo && rfsAiSeo.contentConnected);
+			$('#rfs_short_desc_bulk_generate_selected').prop('disabled', count === 0 || !connected);
+			$('#rfs_short_desc_bulk_generate_all').prop('disabled', this.items.length === 0 || !connected);
 
 			// Update select all checkbox state
 			const totalCheckboxes = $('.rfs-short-desc-bulk-item-checkbox').length;
