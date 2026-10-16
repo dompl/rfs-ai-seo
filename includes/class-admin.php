@@ -365,7 +365,10 @@ class Admin {
 		$settings = new Settings();
 
 		if (isset($_POST['rfs_ai_seo_openai_model'])) {
-			update_option('rfs_ai_seo_openai_model', sanitize_text_field($_POST['rfs_ai_seo_openai_model']));
+			$posted_model = sanitize_text_field(wp_unslash($_POST['rfs_ai_seo_openai_model']));
+			if (in_array($posted_model, Settings::MODELS, true)) {
+				update_option('rfs_ai_seo_openai_model', $posted_model);
+			}
 		}
 
 		// Save image and content default settings.

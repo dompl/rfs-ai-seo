@@ -66,4 +66,11 @@ if (current_user_can('manage_options')) {
 wp_set_current_user($prior_user);
 delete_option('rfs_ai_seo_include_features');
 
+// R-fix-1: nano-banana leftover must not be a usable model.
+update_option('rfs_ai_seo_openai_model', 'nano-banana');
+rfs_assert_same('gpt-4o', $s->get_model(), 'unknown/removed model falls back to default');
+update_option('rfs_ai_seo_openai_model', 'gpt-4o');
+rfs_assert_same('gpt-4o', $s->get_model(), 'valid model gpt-4o read');
+delete_option('rfs_ai_seo_openai_model');
+
 rfs_done('settings');

@@ -22,41 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The currency selector and cost multiplier/spending cap settings; all figures are now in pounds, charged by the gateway.
 - The `RFS_AI_SEO_OPEN_AI_KEY` and `RFS_AI_SEO_GEMINI_API_KEY` wp-config constants and the stored OpenAI API key option (API key encryption is no longer needed).
 
-## [Unreleased]
+## [1.0.0] - 2026-06
 
-### Added
-- Phase 1: Core Structure
-  - Main plugin bootstrap and activation/deactivation hooks
-  - Database table creation for usage logging
-  - Settings management with API key encryption (AES-256-CBC)
-  - Admin menu structure with Settings, Bulk Generate, and Usage Stats pages
-  - Dependency checking for WooCommerce and Yoast SEO
-  - Default prompt templates for products, variations, and categories
-  - ACF fields configuration interface
-  - Character limit settings (title and description)
-
-- Phase 2: OpenAI Integration
-  - OpenAI client class for API communication
-  - Connection test functionality with AJAX handler
-  - Comprehensive error handling (invalid API key, rate limits, network errors, invalid JSON)
-  - Request retry mechanism for network failures
-  - Token usage tracking from API responses
-  - Real-time connection testing from settings page
-
-### Security
-- API key encryption using WordPress salts
-- AJAX nonce verification
-- Capability checks for all admin actions
-- Input sanitization and output escaping
-- SQL prepared statements for database queries
-
-## [1.0.0] - TBD
-
-### Planned
-- Content collection from WooCommerce products and categories
-- ACF field extraction with flexible content support
-- Meta generation with SERP preview
-- Bulk generation tool with progress tracking
-- Usage statistics and CSV export
-- Product and category meta boxes
-- Character counters with visual feedback
+Initial release. OpenAI and Gemini API keys were stored (encrypted) in WordPress options,
+with an in-plugin credit ledger and Stripe top-ups. Superseded by 2.0.0, which moved all AI
+calls through the ATS AI Portal gateway and removed the stored keys entirely.

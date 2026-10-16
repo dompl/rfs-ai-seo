@@ -22,6 +22,13 @@ if (!defined('ABSPATH')) {
 class Settings {
 
 	/**
+	 * Allowed text generation models for rfs_ai_seo_openai_model.
+	 *
+	 * @var string[]
+	 */
+	const MODELS = ['gpt-4o', 'gpt-4o-mini'];
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -152,7 +159,8 @@ class Settings {
 	 * @return string Model name.
 	 */
 	public function get_model(): string {
-		return $this->get_option('rfs_ai_seo_openai_model', 'gpt-4o');
+		$model = $this->get_option('rfs_ai_seo_openai_model', 'gpt-4o');
+		return in_array($model, self::MODELS, true) ? $model : 'gpt-4o';
 	}
 
 	/**

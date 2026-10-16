@@ -104,47 +104,6 @@ Starting values for the description generators, overridable per run on each bulk
 - Description length in words, short description length in sentences
 - Whether to include a bullet-point key features list
 
-## Development Status
-
-### Phase 1: Core Structure ✅
-- Main plugin file and bootstrap
-- Database table creation
-- Settings management with API key encryption
-- Admin menu and pages
-- Dependency checking
-
-### Phase 2: OpenAI Integration ✅
-- OpenAI client class
-- Connection test functionality
-- API error handling
-- Token usage tracking
-
-### Phase 3: Content Collection (Coming Soon)
-- Content collector for products
-- Content collector for categories
-- ACF handler
-
-### Phase 4: Generation (Coming Soon)
-- Prompt manager with templates
-- Generator class
-- Yoast integration (read/write)
-
-### Phase 5: Single Item UI (Coming Soon)
-- Meta box registration
-- SERP preview component
-- Character counter
-- AJAX handlers
-
-### Phase 6: Bulk Generation (Coming Soon)
-- Bulk generator page
-- Filter and listing functionality
-- Bulk processing with progress
-
-### Phase 7: Usage & Polish (Coming Soon)
-- Usage logger
-- Statistics display
-- CSV export
-
 ## License
 
 GPL v2 or later
