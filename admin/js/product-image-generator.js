@@ -177,7 +177,8 @@
 				success: (response) => {
 					if (response.success) {
 						const costInfo = response.data.cost_formatted ? ' (' + response.data.cost_formatted + ')' : '';
-						this.logEntry(item.label, 'success', 'Generated' + costInfo);
+						const balanceInfo = (typeof response.data.balance_gbp === 'number') ? ' Balance £' + response.data.balance_gbp.toFixed(2) : '';
+						this.logEntry(item.label, 'success', 'Generated' + costInfo + balanceInfo);
 						this.generatedAttachmentId = response.data.new_attachment_id;
 						this.showComparison(item, response.data);
 					} else {
@@ -211,7 +212,8 @@
 
 			$('#rfs-comparison-label').text(item.label);
 			const costLabel = data.cost_formatted ? ' \u2014 ' + data.cost_formatted : '';
-			$('#rfs-comparison-counter').text('(' + current + '/' + total + ')' + costLabel);
+			const balanceLabel = (typeof data.balance_gbp === 'number') ? ' Balance \u00a3' + data.balance_gbp.toFixed(2) : '';
+			$('#rfs-comparison-counter').text('(' + current + '/' + total + ')' + costLabel + balanceLabel);
 			$('#rfs-comparison-original').attr('src', data.original_url);
 			$('#rfs-comparison-generated').attr('src', data.generated_url);
 
@@ -354,7 +356,7 @@
 				html += '<p style="color: #d63638;">Failed: ' + this.results.failed + '</p>';
 			}
 			if (this.totalCost > 0) {
-				html += '<p style="margin-top: 6px; color: #50575e;">Total cost: <strong>\u00a3' + this.totalCost.toFixed(4) + '</strong></p>';
+				html += '<p style="margin-top: 6px; color: #50575e;">Total cost: <strong>\u00a3' + this.totalCost.toFixed(2) + '</strong></p>';
 			}
 
 			$('#rfs-completion-stats').html(html);
