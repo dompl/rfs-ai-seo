@@ -7,6 +7,8 @@
 
 namespace RFS_AI_SEO;
 
+use RedFrogStudio\AtsAiPortal\Portal;
+
 // Exit if accessed directly.
 if (!defined('ABSPATH')) {
 	exit;
@@ -15,38 +17,16 @@ if (!defined('ABSPATH')) {
 /**
  * Image Generator Class
  *
- * Handles AI-powered image generation using Google Gemini (Nano Banana).
+ * Handles AI-powered image generation using gpt-image-1 through the Red Frog portal gateway.
  *
  * @class Image_Generator
  */
 class Image_Generator {
 
-	/**
-	 * Gemini API endpoint.
-	 */
-	private const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+	/** Seconds to wait for gpt-image-1 (slow at high quality). */
+	public const IMAGE_TIMEOUT = 120;
 
-	/**
-	 * Gemini image generation pricing per model.
-	 * Rates: input/output per 1M tokens, image output tokens per generated image.
-	 */
-	private const IMAGE_PRICING = [
-		'gemini-2.5-flash-image' => [
-			'input_per_1m'       => 0.15,
-			'output_per_1m'      => 30.00,
-			'output_image_tokens' => 1290,
-		],
-		'gemini-2.0-flash-exp' => [
-			'input_per_1m'       => 0.10,
-			'output_per_1m'      => 30.00,
-			'output_image_tokens' => 1290,
-		],
-		'gemini-3-pro-image-preview' => [
-			'input_per_1m'       => 1.25,
-			'output_per_1m'      => 120.00,
-			'output_image_tokens' => 1120,
-		],
-	];
+	private const IMAGE_MODEL = 'gpt-image-1';
 
 	/**
 	 * Settings instance.
@@ -57,9 +37,11 @@ class Image_Generator {
 
 	/**
 	 * Constructor.
+	 *
+	 * @param Settings|null $settings Settings instance (optional, for testing).
 	 */
-	public function __construct() {
-		$this->settings = new Settings();
+	public function __construct(?Settings $settings = null) {
+		$this->settings = $settings ?? new Settings();
 
 		// Register AJAX handlers.
 		add_action('wp_ajax_rfs_ai_generate_image', [$this, 'ajax_generate_image']);
@@ -239,35 +221,27 @@ class Image_Generator {
 	 * @return string Button HTML.
 	 */
 	private function render_regenerate_button(int $attachment_id): string {
-		$has_key = !empty($this->settings->get_gemini_api_key());
+		$has_key = Portal::has_key('images');
 
 		ob_start();
 		?>
 		<div class="rfs-ai-image-generator">
-			<?php if ($has_key): ?>
-				<button
-					type="button"
-					class="button button-primary rfs-ai-regenerate-image-btn"
-					data-attachment-id="<?php echo esc_attr($attachment_id); ?>">
-					<span class="dashicons dashicons-image-rotate" style="margin-top: 3px;"></span>
-					<?php esc_html_e('Generate Image with AI', 'rfs-ai-seo'); ?>
-				</button>
-				<span class="spinner" style="float: none; margin: 0 0 0 10px;"></span>
-				<p class="description">
-					<?php esc_html_e('Generate a new version of this image using Nano Banana (Gemini). The original image will be preserved.', 'rfs-ai-seo'); ?>
-				</p>
-			<?php else: ?>
-				<p class="description" style="color: #d63638;">
-					<?php
-					echo wp_kses_post(
-						sprintf(
-							__('Gemini API key is required for image generation. <a href="%s">Configure it in settings</a> or define <code>RFS_AI_SEO_GEMINI_KEY</code> in wp-config.php.', 'rfs-ai-seo'),
-							admin_url('admin.php?page=rfs-ai-settings&tab=api')
-						)
-					);
-					?>
-				</p>
-			<?php endif; ?>
+			<button
+				type="button"
+				class="button button-primary rfs-ai-regenerate-image-btn"
+				data-attachment-id="<?php echo esc_attr($attachment_id); ?>"
+				<?php echo $has_key ? '' : 'disabled title="' . esc_attr__('AI not connected', 'rfs-ai-seo') . '"'; ?>>
+				<span class="dashicons dashicons-image-rotate" style="margin-top: 3px;"></span>
+				<?php esc_html_e('Regenerate with AI', 'rfs-ai-seo'); ?>
+			</button>
+			<span class="spinner" style="float: none; margin: 0 0 0 10px;"></span>
+			<p class="description">
+				<?php if ($has_key): ?>
+					<?php esc_html_e('Generate a new version of this image with AI. The original image will be preserved.', 'rfs-ai-seo'); ?>
+				<?php else: ?>
+					<?php esc_html_e('AI is not connected. Ask an administrator to run: wp ats secret set gateway_key_images', 'rfs-ai-seo'); ?>
+				<?php endif; ?>
+			</p>
 			<div class="rfs-ai-image-result" style="margin-top: 10px; display: none;">
 				<div class="rfs-ai-image-preview" style="max-width: 300px; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9;"></div>
 			</div>
@@ -353,6 +327,7 @@ class Image_Generator {
 		if (is_wp_error($result)) {
 			wp_send_json_error([
 				'message' => $result->get_error_message(),
+				'code' => $result->get_error_code(),
 			]);
 		}
 
@@ -376,33 +351,21 @@ class Image_Generator {
 		// Build prompt from attachment data.
 		$prompt = $this->build_prompt($attachment);
 
-		error_log('RFS AI SEO: Final prompt being sent to Gemini (' . strlen($prompt) . ' chars): ' . $prompt);
-
 		if (empty($prompt)) {
 			return new \WP_Error('empty_prompt', __('Could not generate a prompt for this image. Please add an AI image description.', 'rfs-ai-seo'));
 		}
 
-		// Get Gemini API key.
-		$api_key = $this->settings->get_gemini_api_key();
-
-		error_log('RFS AI SEO: Gemini key source: ' . ($this->settings->is_gemini_key_constant() ? 'wp-config constant' : 'database'));
-		error_log('RFS AI SEO: Gemini key retrieved, length: ' . strlen($api_key));
-
-		if (empty($api_key)) {
-			return new \WP_Error('no_api_key', __('Gemini API key is not configured. Add it in settings or define RFS_AI_SEO_GEMINI_KEY in wp-config.php.', 'rfs-ai-seo'));
-		}
-
-		// Get per-image aspect ratio, fall back to global setting.
+		// Get per-image aspect ratio, fall back to a sensible default.
 		$aspect_ratio = get_post_meta($attachment_id, '_rfs_ai_image_aspect_ratio', true);
 		if (empty($aspect_ratio)) {
-			$aspect_ratio = $this->settings->get_image_aspect_ratio();
+			$aspect_ratio = '1:1';
 		}
 
 		// Read the source image file to send alongside the prompt.
 		$source_image_data = $this->get_source_image_data($attachment_id);
 
-		// Call Gemini API with the source image.
-		$response = $this->call_gemini_api($api_key, $prompt, $aspect_ratio, $source_image_data);
+		// Call the AI service with the source image.
+		$response = $this->call_image_api($prompt, $this->size_for($aspect_ratio), $source_image_data, (string) $attachment_id);
 
 		if (is_wp_error($response)) {
 			return $response;
@@ -420,20 +383,14 @@ class Image_Generator {
 		update_post_meta($new_attachment_id, '_rfs_ai_generated', true);
 		update_post_meta($new_attachment_id, '_rfs_ai_prompt', $prompt);
 
-		// Calculate cost from usage metadata.
-		$model = $this->settings->get_image_model();
-		$usage = $response['usage'] ?? [];
-		$cost = $this->calculate_image_cost($usage, $model);
-
-		// Log the generation for usage tracking.
-		$prompt_tokens = $usage['promptTokenCount'] ?? 0;
-		$completion_tokens = $usage['candidatesTokenCount'] ?? 0;
+		$charged = (float) ($response['charged_gbp'] ?? 0);
 		$logger = new Usage_Logger();
 		$logger->log($new_attachment_id, 'image_generation', [
-			'tokens_prompt' => $prompt_tokens,
-			'tokens_completion' => $completion_tokens,
-			'tokens_total' => $usage['totalTokenCount'] ?? ($prompt_tokens + $completion_tokens),
-			'model' => $model,
+			'tokens_prompt' => 0,
+			'tokens_completion' => 0,
+			'tokens_total' => 0,
+			'model' => self::IMAGE_MODEL,
+			'charged_gbp' => $charged,
 			'generated_title' => $attachment->post_title,
 			'generated_description' => mb_substr($prompt, 0, 500),
 		]);
@@ -448,8 +405,9 @@ class Image_Generator {
 			'new_attachment_url' => $full_url,
 			'thumbnail_url' => $thumbnail_url,
 			'prompt' => $prompt,
-			'cost' => round($cost, 4),
-			'cost_formatted' => $this->settings->format_cost($cost, 4),
+			'cost' => round($charged, 4),
+			'cost_formatted' => $this->settings->format_gbp($charged),
+			'balance_gbp' => Portal::balance(),
 		];
 	}
 
@@ -511,7 +469,7 @@ class Image_Generator {
 	}
 
 	/**
-	 * Read source image as base64 data for sending to Gemini.
+	 * Read source image as base64 data for sending to the AI service.
 	 *
 	 * @param int $attachment_id Attachment ID.
 	 * @return array|null Array with 'data' (base64) and 'mime_type', or null if unreadable.
@@ -526,8 +484,8 @@ class Image_Generator {
 
 		$mime_type = get_post_mime_type($attachment_id);
 
-		// Only include image types that Gemini supports.
-		$supported = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+		// Only include image types that gpt-image-1 edits accept.
+		$supported = ['image/jpeg', 'image/png', 'image/webp'];
 		if (!in_array($mime_type, $supported, true)) {
 			error_log('RFS AI SEO: Unsupported source image type: ' . $mime_type);
 			return null;
@@ -548,106 +506,92 @@ class Image_Generator {
 	}
 
 	/**
-	 * Call Gemini API to generate image.
+	 * Call the portal's OpenAI image endpoint (gpt-image-1).
 	 *
-	 * @param string     $api_key Gemini API key.
-	 * @param string     $prompt Image prompt.
-	 * @param string     $aspect_ratio Aspect ratio for the image.
-	 * @param array|null $source_image Source image data (base64 + mime_type) to include in the request.
+	 * @param string      $prompt Image prompt.
+	 * @param string      $size Image size, eg '1024x1024'.
+	 * @param array|null  $source_image Source image data (base64 + mime_type) to edit, or null to generate from scratch.
+	 * @param string      $reference Reference id for portal usage tracking.
 	 * @return array|\WP_Error API response with base64 image data, or error.
 	 */
-	private function call_gemini_api(string $api_key, string $prompt, string $aspect_ratio = '1:1', ?array $source_image = null) {
-		$model = $this->settings->get_image_model();
+	private function call_image_api(string $prompt, string $size, ?array $source_image, string $reference = ''): array|\WP_Error {
+		if (!Portal::has_key('images')) {
+			return new \WP_Error('ats_portal_no_key', __('AI is not connected. Run: wp ats secret set gateway_key_images', 'rfs-ai-seo'));
+		}
 
-		// Pass the API key as a query parameter (required for AI Studio keys).
-		$endpoint = self::GEMINI_API_BASE . $model . ':generateContent?key=' . urlencode($api_key);
+		$quality = $this->settings->get_image_quality();
+		$headers = Portal::headers('images', 'ats:image:product', $reference);
 
-		// Build the parts array — include source image if available.
-		$parts = [];
-
-		if ($source_image !== null) {
-			$parts[] = [
-				'inlineData' => [
-					'mimeType' => $source_image['mime_type'],
-					'data' => $source_image['data'],
-				],
+		if ($source_image) {
+			$boundary = 'rfs' . wp_generate_password(24, false);
+			$ext = match ($source_image['mime_type']) {
+				'image/jpeg' => 'jpg',
+				'image/webp' => 'webp',
+				default => 'png',
+			};
+			$fields = [
+				'model' => self::IMAGE_MODEL,
+				'prompt' => $prompt,
+				'size' => $size,
+				'quality' => $quality,
+				'n' => '1',
 			];
-			// Wrap the user prompt with explicit transformation instructions.
-			$parts[] = ['text' => 'Edit the provided image according to the following instructions. Generate a new, visually different version of this product image. Apply the style described below — do NOT simply reproduce the original image. The result must look noticeably different from the input.' . "\n\n" . $prompt];
-			error_log('RFS AI SEO: Including source image in Gemini request (' . $source_image['mime_type'] . ')');
-		} else {
-			$parts[] = ['text' => $prompt];
-			error_log('RFS AI SEO: No source image included - text-only prompt');
-		}
-
-		$body = [
-			'contents' => [
-				[
-					'parts' => $parts,
-				],
-			],
-			'generationConfig' => [
-				'responseModalities' => ['TEXT', 'IMAGE'],
-				'imageConfig' => [
-					'aspectRatio' => $aspect_ratio,
-				],
-			],
-		];
-
-		error_log('RFS AI SEO: Calling Gemini API - Model: ' . $model . ', Aspect: ' . $aspect_ratio);
-		error_log('RFS AI SEO: Gemini API key length: ' . strlen($api_key) . ', prefix: ' . substr($api_key, 0, 8) . '...');
-
-		$response = wp_remote_post(
-			$endpoint,
-			[
-				'timeout' => 90,
-				'headers' => [
-					'Content-Type' => 'application/json',
-				],
-				'body' => wp_json_encode($body),
-			]
-		);
-
-		if (is_wp_error($response)) {
-			error_log('RFS AI SEO: Gemini network error: ' . $response->get_error_message());
-			return $response;
-		}
-
-		$response_code = wp_remote_retrieve_response_code($response);
-		$response_body = wp_remote_retrieve_body($response);
-		$data = json_decode($response_body, true);
-
-		error_log('RFS AI SEO: Gemini response code: ' . $response_code);
-
-		if ($response_code !== 200) {
-			$error_message = $data['error']['message'] ?? __('Unknown Gemini API error.', 'rfs-ai-seo');
-			error_log('RFS AI SEO: Gemini API error: ' . $error_message);
-			return new \WP_Error('gemini_api_error', $error_message);
-		}
-
-		// Extract usage metadata from response.
-		$usage_metadata = $data['usageMetadata'] ?? [];
-
-		// Extract image data from response.
-		// Gemini returns candidates[0].content.parts[] which may contain text and inline_data.
-		$candidates = $data['candidates'] ?? [];
-		if (empty($candidates)) {
-			return new \WP_Error('no_candidates', __('Gemini returned no results. Try a different description.', 'rfs-ai-seo'));
-		}
-
-		$parts = $candidates[0]['content']['parts'] ?? [];
-
-		foreach ($parts as $part) {
-			if (isset($part['inlineData'])) {
-				return [
-					'image_data' => $part['inlineData']['data'],
-					'mime_type' => $part['inlineData']['mimeType'] ?? 'image/png',
-					'usage' => $usage_metadata,
-				];
+			$body = '';
+			foreach ($fields as $name => $value) {
+				$body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"{$name}\"\r\n\r\n{$value}\r\n";
 			}
+			$body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"image[]\"; filename=\"source.{$ext}\"\r\n";
+			$body .= "Content-Type: {$source_image['mime_type']}\r\n\r\n" . base64_decode($source_image['data']) . "\r\n";
+			$body .= "--{$boundary}--\r\n";
+			$headers['Content-Type'] = 'multipart/form-data; boundary=' . $boundary;
+			$url = Portal::openai_url('/images/edits');
+		} else {
+			$body = wp_json_encode([
+				'model' => self::IMAGE_MODEL,
+				'prompt' => $prompt,
+				'size' => $size,
+				'quality' => $quality,
+				'n' => 1,
+			]);
+			$url = Portal::openai_url('/images/generations');
 		}
 
-		return new \WP_Error('no_image', __('Gemini did not return an image. Try rephrasing your description.', 'rfs-ai-seo'));
+		$response = wp_remote_post($url, ['headers' => $headers, 'body' => $body, 'timeout' => self::IMAGE_TIMEOUT]);
+		$code = is_wp_error($response) ? 0 : (int) wp_remote_retrieve_response_code($response);
+
+		if (is_wp_error($response) || $code >= 500) {
+			return new \WP_Error('ats_portal_unavailable', __('AI service unavailable, try again.', 'rfs-ai-seo'));
+		}
+		$raw = (string) wp_remote_retrieve_body($response);
+		if ($code !== 200) {
+			return Portal::error($code, $raw);
+		}
+		$data = json_decode($raw, true);
+		$b64 = $data['data'][0]['b64_json'] ?? '';
+		if (!is_string($b64) || $b64 === '') {
+			return new \WP_Error('no_image', __('The AI service returned no image.', 'rfs-ai-seo'));
+		}
+
+		return [
+			'image_data' => $b64,
+			'mime_type' => 'image/png',
+			'charged_gbp' => Portal::observe($response),
+		];
+	}
+
+	/**
+	 * Map an aspect ratio token to the nearest gpt-image-1 size.
+	 *
+	 * @param string $aspect_ratio Aspect ratio, eg '1:1', '16:9'.
+	 * @return string Image size, eg '1024x1024'.
+	 */
+	private function size_for(string $aspect_ratio): string {
+		return match ($aspect_ratio) {
+			'1:1' => '1024x1024',
+			'16:9', '4:3', '3:2' => '1536x1024',
+			'9:16', '3:4', '2:3' => '1024x1536',
+			default => $this->settings->get_image_size(),
+		};
 	}
 
 	/**
@@ -820,16 +764,11 @@ class Image_Generator {
 	 * @return void
 	 */
 	public function render_featured_image_meta_box(\WP_Post $post): void {
-		$has_key = !empty($this->settings->get_gemini_api_key());
+		$has_key = Portal::has_key('images');
 
 		if (!$has_key) {
 			echo '<p class="description" style="color: #d63638;">';
-			echo wp_kses_post(
-				sprintf(
-					__('Gemini API key required. <a href="%s">Configure in settings</a> or define <code>RFS_AI_SEO_GEMINI_KEY</code> in wp-config.php.', 'rfs-ai-seo'),
-					admin_url('admin.php?page=rfs-ai-settings&tab=api')
-				)
-			);
+			esc_html_e('AI is not connected. Ask an administrator to run: wp ats secret set gateway_key_images', 'rfs-ai-seo');
 			echo '</p>';
 			return;
 		}
@@ -918,16 +857,18 @@ class Image_Generator {
 
 			<div id="rfs-ai-featured-cost" style="display: none; margin-top: 8px; font-size: 11px; color: #50575e;"></div>
 
+			<?php $estimate = (new Usage_Logger())->average_charge('image_generation'); ?>
+			<?php if ($estimate !== null) : ?>
 			<p class="description rfs-ai-cost-estimate" style="margin-top: 8px; font-size: 11px;">
 				<?php
-				$estimate = self::estimate_cost_per_image($this->settings->get_image_model());
 				printf(
 					/* translators: %s: estimated cost */
-					esc_html__('Estimated cost: %s per image', 'rfs-ai-seo'),
-					'<strong>' . esc_html($this->settings->format_cost($estimate, 4)) . '</strong>'
+					esc_html__('About %s per image, based on recent runs', 'rfs-ai-seo'),
+					'<strong>' . esc_html($this->settings->format_gbp($estimate)) . '</strong>'
 				);
 				?>
 			</p>
+			<?php endif; ?>
 
 			<div id="rfs-ai-featured-status" style="display: none; margin-top: 8px;"></div>
 		</div>
@@ -1141,9 +1082,7 @@ class Image_Generator {
 						<span id="rfs-selected-count" style="font-size: 12px; color: #50575e;">
 							<?php esc_html_e('0 images selected', 'rfs-ai-seo'); ?>
 						</span>
-						<span id="rfs-cost-estimate" style="font-size: 11px; color: #50575e; display: block; margin-top: 2px;"
-							data-per-image="<?php echo esc_attr(self::estimate_cost_per_image($this->settings->get_image_model())); ?>">
-						</span>
+						<span id="rfs-cost-estimate" style="font-size: 11px; color: #50575e; display: block; margin-top: 2px;"></span>
 					</div>
 
 					<button type="button" class="button button-primary" id="rfs-product-generate-btn" style="width: 100%;" disabled>
@@ -1254,15 +1193,6 @@ class Image_Generator {
 			]);
 		}
 
-		// Get API key.
-		$api_key = $this->settings->get_gemini_api_key();
-
-		if (empty($api_key)) {
-			wp_send_json_error([
-				'message' => __('Gemini API key is not configured.', 'rfs-ai-seo'),
-			]);
-		}
-
 		// If there's a current featured image, include it as source for context.
 		$source_image = null;
 		$current_thumbnail_id = get_post_thumbnail_id($post_id);
@@ -1270,12 +1200,13 @@ class Image_Generator {
 			$source_image = $this->get_source_image_data($current_thumbnail_id);
 		}
 
-		// Call Gemini API.
-		$response = $this->call_gemini_api($api_key, $prompt, $aspect_ratio, $source_image);
+		// Call the AI service.
+		$response = $this->call_image_api($prompt, $this->size_for($aspect_ratio), $source_image, (string) $post_id);
 
 		if (is_wp_error($response)) {
 			wp_send_json_error([
 				'message' => $response->get_error_message(),
+				'code' => $response->get_error_code(),
 			]);
 		}
 
@@ -1293,6 +1224,7 @@ class Image_Generator {
 		if (is_wp_error($new_attachment_id)) {
 			wp_send_json_error([
 				'message' => $new_attachment_id->get_error_message(),
+				'code' => $new_attachment_id->get_error_code(),
 			]);
 		}
 
@@ -1300,20 +1232,14 @@ class Image_Generator {
 		update_post_meta($new_attachment_id, '_rfs_ai_generated', true);
 		update_post_meta($new_attachment_id, '_rfs_ai_prompt', $prompt);
 
-		// Calculate cost from usage metadata.
-		$model = $this->settings->get_image_model();
-		$usage = $response['usage'] ?? [];
-		$cost = $this->calculate_image_cost($usage, $model);
-
-		// Log the generation.
-		$prompt_tokens = $usage['promptTokenCount'] ?? 0;
-		$completion_tokens = $usage['candidatesTokenCount'] ?? 0;
+		$charged = (float) ($response['charged_gbp'] ?? 0);
 		$logger = new Usage_Logger();
 		$logger->log($new_attachment_id, 'image_generation', [
-			'tokens_prompt' => $prompt_tokens,
-			'tokens_completion' => $completion_tokens,
-			'tokens_total' => $usage['totalTokenCount'] ?? ($prompt_tokens + $completion_tokens),
-			'model' => $model,
+			'tokens_prompt' => 0,
+			'tokens_completion' => 0,
+			'tokens_total' => 0,
+			'model' => self::IMAGE_MODEL,
+			'charged_gbp' => $charged,
 			'generated_title' => $post_title,
 			'generated_description' => mb_substr($prompt, 0, 500),
 		]);
@@ -1327,8 +1253,9 @@ class Image_Generator {
 			'attachment_id' => $new_attachment_id,
 			'url' => $full_url,
 			'thumbnail_url' => $thumbnail_url,
-			'cost' => round($cost, 4),
-			'cost_formatted' => $this->settings->format_cost($cost, 4),
+			'cost' => round($charged, 4),
+			'cost_formatted' => $this->settings->format_gbp($charged),
+			'balance_gbp' => Portal::balance(),
 		]);
 	}
 
@@ -1461,70 +1388,6 @@ class Image_Generator {
 	}
 
 	/**
-	 * Static helper: estimate cost per image for a given model.
-	 *
-	 * Used by the main plugin class for localized script data without
-	 * needing to instantiate Image_Generator (which registers hooks).
-	 *
-	 * @param string $model Model name.
-	 * @return float Estimated cost per image in USD.
-	 */
-	public static function estimate_cost_per_image(string $model): float {
-		$pricing = self::IMAGE_PRICING[$model] ?? self::IMAGE_PRICING['gemini-2.5-flash-image'];
-
-		$avg_input_tokens = 500;
-		$input_cost = ($avg_input_tokens / 1_000_000) * $pricing['input_per_1m'];
-		$output_cost = ($pricing['output_image_tokens'] / 1_000_000) * $pricing['output_per_1m'];
-
-		$settings = new Settings();
-		$multiplier = $settings->get_cost_multiplier($model);
-
-		return round(($input_cost + $output_cost) * $multiplier, 4);
-	}
-
-	/**
-	 * Calculate actual cost from Gemini usage metadata.
-	 *
-	 * @param array  $usage Usage metadata from Gemini response.
-	 * @param string $model Model name.
-	 * @return float Cost in USD.
-	 */
-	private function calculate_image_cost(array $usage, string $model): float {
-		$pricing = self::IMAGE_PRICING[$model] ?? self::IMAGE_PRICING['gemini-2.5-flash-image'];
-
-		$prompt_tokens = $usage['promptTokenCount'] ?? 0;
-		$completion_tokens = $usage['candidatesTokenCount'] ?? $pricing['output_image_tokens'];
-
-		$input_cost = ($prompt_tokens / 1_000_000) * $pricing['input_per_1m'];
-		$output_cost = ($completion_tokens / 1_000_000) * $pricing['output_per_1m'];
-
-		$multiplier = $this->settings->get_cost_multiplier($model);
-
-		return ($input_cost + $output_cost) * $multiplier;
-	}
-
-	/**
-	 * Get estimated cost per image for the current model.
-	 *
-	 * Uses average token counts: ~500 input tokens (prompt + source image),
-	 * plus the model's standard output image token count.
-	 *
-	 * @return float Estimated cost per image in USD.
-	 */
-	public function get_image_cost_estimate(): float {
-		$model = $this->settings->get_image_model();
-		$pricing = self::IMAGE_PRICING[$model] ?? self::IMAGE_PRICING['gemini-2.5-flash-image'];
-
-		$avg_input_tokens = 500;
-		$input_cost = ($avg_input_tokens / 1_000_000) * $pricing['input_per_1m'];
-		$output_cost = ($pricing['output_image_tokens'] / 1_000_000) * $pricing['output_per_1m'];
-
-		$multiplier = $this->settings->get_cost_multiplier($model);
-
-		return ($input_cost + $output_cost) * $multiplier;
-	}
-
-	/**
 	 * Resolve prompt from template index or custom prompt text.
 	 *
 	 * @param string $template_index Template index or empty string.
@@ -1577,24 +1440,16 @@ class Image_Generator {
 			]);
 		}
 
-		// Get API key.
-		$api_key = $this->settings->get_gemini_api_key();
-
-		if (empty($api_key)) {
-			wp_send_json_error([
-				'message' => __('Gemini API key is not configured.', 'rfs-ai-seo'),
-			]);
-		}
-
 		// Get source image data.
 		$source_image = $this->get_source_image_data($attachment_id);
 
-		// Call Gemini API.
-		$response = $this->call_gemini_api($api_key, $prompt, $aspect_ratio, $source_image);
+		// Call the AI service.
+		$response = $this->call_image_api($prompt, $this->size_for($aspect_ratio), $source_image, (string) $attachment_id);
 
 		if (is_wp_error($response)) {
 			wp_send_json_error([
 				'message' => $response->get_error_message(),
+				'code' => $response->get_error_code(),
 			]);
 		}
 
@@ -1615,6 +1470,7 @@ class Image_Generator {
 		if (is_wp_error($new_attachment_id)) {
 			wp_send_json_error([
 				'message' => $new_attachment_id->get_error_message(),
+				'code' => $new_attachment_id->get_error_code(),
 			]);
 		}
 
@@ -1623,20 +1479,14 @@ class Image_Generator {
 		update_post_meta($new_attachment_id, '_rfs_ai_generated', true);
 		update_post_meta($new_attachment_id, '_rfs_ai_prompt', $prompt);
 
-		// Calculate cost from usage metadata.
-		$model = $this->settings->get_image_model();
-		$usage = $response['usage'] ?? [];
-		$cost = $this->calculate_image_cost($usage, $model);
-
-		// Log the generation.
-		$prompt_tokens = $usage['promptTokenCount'] ?? 0;
-		$completion_tokens = $usage['candidatesTokenCount'] ?? 0;
+		$charged = (float) ($response['charged_gbp'] ?? 0);
 		$logger = new Usage_Logger();
 		$logger->log($new_attachment_id, 'image_generation', [
-			'tokens_prompt' => $prompt_tokens,
-			'tokens_completion' => $completion_tokens,
-			'tokens_total' => $usage['totalTokenCount'] ?? ($prompt_tokens + $completion_tokens),
-			'model' => $model,
+			'tokens_prompt' => 0,
+			'tokens_completion' => 0,
+			'tokens_total' => 0,
+			'model' => self::IMAGE_MODEL,
+			'charged_gbp' => $charged,
 			'generated_title' => $original_attachment->post_title,
 			'generated_description' => mb_substr($prompt, 0, 500),
 		]);
@@ -1652,8 +1502,9 @@ class Image_Generator {
 			'new_attachment_id' => $new_attachment_id,
 			'original_url' => $original_url,
 			'generated_url' => $generated_url,
-			'cost' => round($cost, 4),
-			'cost_formatted' => $this->settings->format_cost($cost, 4),
+			'cost' => round($charged, 4),
+			'cost_formatted' => $this->settings->format_gbp($charged),
+			'balance_gbp' => Portal::balance(),
 		]);
 	}
 

@@ -100,6 +100,10 @@
 				? '<p style="margin-top: 8px; font-size: 11px; color: #50575e;">Cost: <strong>' + data.cost_formatted + '</strong></p>'
 				: '';
 
+			const balanceHtml = (typeof data.balance_gbp === 'number')
+				? '<p style="margin-top: 4px; font-size: 11px; color: #50575e;">Balance: <strong>£' + data.balance_gbp.toFixed(2) + '</strong></p>'
+				: '';
+
 			const html = `
 				<div style="margin-bottom: 10px;">
 					<strong style="color: #46b450;">Image generated successfully!</strong>
@@ -117,6 +121,7 @@
 						</a>
 					</p>
 					${costHtml}
+					${balanceHtml}
 				</div>
 			`;
 

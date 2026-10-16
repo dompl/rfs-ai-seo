@@ -101,15 +101,8 @@
 			$('#rfs-product-generate-btn').prop('disabled', count === 0);
 
 			// Update cost estimate.
-			const $estimate = $('#rfs-cost-estimate');
-			if ($estimate.length && count > 0) {
-				const perImage = parseFloat($estimate.data('per-image')) || 0;
-				const totalEstimate = (perImage * count).toFixed(4);
-				var sym = (typeof rfsAiSeo !== 'undefined' && rfsAiSeo.currencySymbol) ? rfsAiSeo.currencySymbol : '$';
-				$estimate.html('Est. cost: <strong>' + sym + totalEstimate + '</strong> (~' + sym + perImage.toFixed(4) + '/image)').show();
-			} else {
-				$estimate.hide();
-			}
+			var est = rfsAiSeo.imageEstimate;
+			$('#rfs-cost-estimate').text(est ? 'About £' + Number(est).toFixed(2) + ' per image, based on recent runs' : '').toggle(!!est);
 		},
 
 		getPromptSettings() {
@@ -361,8 +354,7 @@
 				html += '<p style="color: #d63638;">Failed: ' + this.results.failed + '</p>';
 			}
 			if (this.totalCost > 0) {
-				var costSym = (typeof rfsAiSeo !== 'undefined' && rfsAiSeo.currencySymbol) ? rfsAiSeo.currencySymbol : '$';
-				html += '<p style="margin-top: 6px; color: #50575e;">Total cost: <strong>' + costSym + this.totalCost.toFixed(4) + '</strong></p>';
+				html += '<p style="margin-top: 6px; color: #50575e;">Total cost: <strong>\u00a3' + this.totalCost.toFixed(4) + '</strong></p>';
 			}
 
 			$('#rfs-completion-stats').html(html);
