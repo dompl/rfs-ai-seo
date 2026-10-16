@@ -9,6 +9,10 @@
 if (!defined('ABSPATH')) {
 	exit;
 }
+
+$rfs_settings = new \RFS_AI_SEO\Settings();
+$rfs_connected = \RedFrogStudio\AtsAiPortal\Portal::has_key('content');
+$rfs_focuskw = get_post_meta($post->ID, '_yoast_wpseo_focuskw', true);
 ?>
 
 <div class="rfs-ai-seo-meta-box">
@@ -126,11 +130,6 @@ if (!defined('ABSPATH')) {
 		<?php endif; ?>
 	</div>
 
-	<?php
-	$rfs_settings = new \RFS_AI_SEO\Settings();
-	$rfs_connected = \RedFrogStudio\AtsAiPortal\Portal::has_key('content');
-	$rfs_focuskw = get_post_meta($post->ID, '_yoast_wpseo_focuskw', true);
-	?>
 	<div class="rfs-generate-controls" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:8px 0">
 		<label><?php esc_html_e('Tone', 'rfs-ai-seo'); ?><br>
 			<select id="rfs_description_tone">
@@ -228,11 +227,6 @@ if (!defined('ABSPATH')) {
 		<?php endif; ?>
 	</div>
 
-	<?php
-	$rfs_settings = new \RFS_AI_SEO\Settings();
-	$rfs_connected = \RedFrogStudio\AtsAiPortal\Portal::has_key('content');
-	$rfs_focuskw = get_post_meta($post->ID, '_yoast_wpseo_focuskw', true);
-	?>
 	<div class="rfs-generate-controls" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:8px 0">
 		<label><?php esc_html_e('Tone', 'rfs-ai-seo'); ?><br>
 			<select id="rfs_short_description_tone">

@@ -43,13 +43,22 @@ $gen->generate_for_product($pid);
 $sent = json_decode(rfs_last_call()['args']['body'], true);
 rfs_assert(str_contains($sent['messages'][count($sent['messages']) - 1]['content'], 'yoastkw'), 'Yoast focus keyword used by default');
 
-// should_skip: empty -> false, has content -> true, and the bulk AJAX path makes no HTTP call.
+// should_skip: empty -> false, has content -> true. Bound directly to the private method; the bulk AJAX handler itself is not exercised here.
 $skip = \Closure::bind(fn(int $id, string $k) => $this->should_skip($id, $k), $gen, Description_Generator::class);
 rfs_assert_same(false, $skip($pid, 'description'), 'no description -> not skipped');
 $product = wc_get_product($pid);
 $product->set_description('<p>Existing</p>');
 $product->save();
 rfs_assert_same(true, $skip($pid, 'description'), 'existing description -> skipped');
+
+// resolve_options: words clamp to Settings::get_description_words() range (50-1000),
+// sentences clamp to Settings::get_short_sentences() range (1-6). A zero value is
+// falsy, so it falls back to the Settings default (2) rather than clamping up to 1.
+$resolve = \Closure::bind(fn(array $o, string $k, int $id) => $this->resolve_options($o, $k, $id), $gen, Description_Generator::class);
+rfs_assert_same(50, $resolve(['words' => 10], 'description', $pid)['words'], 'words 10 clamps up to 50');
+rfs_assert_same(1000, $resolve(['words' => 5000], 'description', $pid)['words'], 'words 5000 clamps down to 1000');
+rfs_assert_same(2, $resolve(['sentences' => 0], 'short', $pid)['sentences'], 'sentences 0 falls back to the Settings default (2)');
+rfs_assert_same(6, $resolve(['sentences' => 9], 'short', $pid)['sentences'], 'sentences 9 clamps down to 6');
 
 wp_delete_post($pid, true);
 rfs_done('generate');
