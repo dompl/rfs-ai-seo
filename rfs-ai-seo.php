@@ -3,7 +3,7 @@
  * Plugin Name: RFS AI SEO
  * Plugin URI: https://github.com/redfrogstudio/rfs-ai-seo
  * Description: AI-powered SEO meta generation for WooCommerce products and categories using OpenAI, with Yoast SEO integration.
- * Version: 1.0.0
+ * Version: 2.0.0
  * Author: Red Frog Studio
  * Author URI: https://redfrogstudio.com
  * Text Domain: rfs-ai-seo

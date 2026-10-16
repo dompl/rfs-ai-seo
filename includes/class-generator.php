@@ -123,19 +123,11 @@ class Generator {
 		// Compile prompt.
 		$prompt = $this->prompt_manager->compile_prompt($template, $data);
 
-		// Get API key and model.
-		$api_key = $this->settings->get_api_key();
+		// Get model.
 		$model = $this->settings->get_model();
 
-		if (empty($api_key)) {
-			return new \WP_Error(
-				'no_api_key',
-				__('OpenAI API key is not configured.', 'rfs-ai-seo')
-			);
-		}
-
 		// Create OpenAI client.
-		$client = new OpenAI_Client($api_key, $model);
+		$client = new OpenAI_Client($model, 'ats:content:meta', (string) $object_id);
 
 		// Generate meta.
 		$result = $client->generate_meta($prompt);

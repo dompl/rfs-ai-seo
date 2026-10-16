@@ -751,25 +751,10 @@ class Admin {
 
 		// Get settings.
 		$settings = new Settings();
-		$api_key = $settings->get_api_key();
 		$model = $settings->get_model();
-		$is_constant = $settings->is_api_key_constant();
-
-		// Debug logging.
-		error_log('RFS AI SEO Test Connection - API Key Source: ' . ($is_constant ? 'wp-config.php constant' : 'database'));
-		error_log('RFS AI SEO Test Connection - API Key Length: ' . strlen($api_key));
-		error_log('RFS AI SEO Test Connection - API Key Prefix: ' . substr($api_key, 0, 10) . '...');
-		error_log('RFS AI SEO Test Connection - Model: ' . $model);
-
-		// Check if API key is set.
-		if (empty($api_key)) {
-			wp_send_json_error([
-				'message' => __('Please enter an API key and save settings before testing the connection.', 'rfs-ai-seo'),
-			]);
-		}
 
 		// Create OpenAI client.
-		$client = new OpenAI_Client($api_key, $model);
+		$client = new OpenAI_Client($model, 'ats:content:meta');
 
 		// Test connection.
 		$result = $client->test_connection();

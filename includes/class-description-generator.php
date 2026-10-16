@@ -70,14 +70,9 @@ class Description_Generator {
 
 		// Get OpenAI client.
 		$settings = new Settings();
-		$api_key = $settings->get_api_key();
 		$model = $settings->get_option('rfs_ai_seo_openai_model', 'gpt-4o');
 
-		if (empty($api_key)) {
-			return new \WP_Error('no_api_key', __('OpenAI API key not configured.', 'rfs-ai-seo'));
-		}
-
-		$openai = new OpenAI_Client($api_key, $model);
+		$openai = new OpenAI_Client($model, 'ats:content:description', (string) $product_id);
 
 		// Generate description.
 		$result = $openai->generate_description($prompt);
@@ -484,14 +479,9 @@ class Description_Generator {
 
 		// Get OpenAI client.
 		$settings = new Settings();
-		$api_key = $settings->get_api_key();
 		$model = $settings->get_option('rfs_ai_seo_openai_model', 'gpt-4o');
 
-		if (empty($api_key)) {
-			return new \WP_Error('no_api_key', __('OpenAI API key not configured.', 'rfs-ai-seo'));
-		}
-
-		$openai = new OpenAI_Client($api_key, $model);
+		$openai = new OpenAI_Client($model, 'ats:content:short-description', (string) $product_id);
 
 		// Generate short description.
 		$result = $openai->generate_description($prompt);

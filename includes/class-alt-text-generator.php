@@ -80,14 +80,9 @@ class Alt_Text_Generator {
 		$prompt = $this->build_alt_text_prompt($context);
 
 		// Get OpenAI client.
-		$api_key = $settings->get_api_key();
 		$model = $settings->get_option('rfs_ai_seo_openai_model', 'gpt-4o');
 
-		if (empty($api_key)) {
-			return new \WP_Error('no_api_key', __('OpenAI API key not configured.', 'rfs-ai-seo'));
-		}
-
-		$openai = new OpenAI_Client($api_key, $model);
+		$openai = new OpenAI_Client($model, 'ats:content:alt-text', (string) $attachment_id);
 		$result = $openai->generate_alt_text($prompt);
 
 		if (is_wp_error($result)) {

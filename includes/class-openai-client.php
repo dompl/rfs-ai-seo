@@ -7,6 +7,8 @@
 
 namespace RFS_AI_SEO;
 
+use RedFrogStudio\AtsAiPortal\Portal;
+
 // Exit if accessed directly.
 if (!defined('ABSPATH')) {
 	exit;
@@ -15,16 +17,11 @@ if (!defined('ABSPATH')) {
 /**
  * OpenAI Client Class
  *
- * Handles all OpenAI API communication.
+ * Talks to OpenAI through the Red Frog API portal gateway.
  *
  * @class OpenAI_Client
  */
 class OpenAI_Client {
-
-	/**
-	 * OpenAI API endpoint.
-	 */
-	private const API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
 	/**
 	 * Request timeout in seconds.
@@ -37,28 +34,37 @@ class OpenAI_Client {
 	private const MAX_RETRIES = 1;
 
 	/**
-	 * API key.
-	 *
-	 * @var string
-	 */
-	private string $api_key;
-
-	/**
 	 * Model name.
 	 *
 	 * @var string
 	 */
 	private string $model;
 
+	/** Gateway purpose header, e.g. ats:content:description. */
+	private string $purpose;
+
+	/** Gateway reference header (product/post/attachment id). */
+	private string $reference;
+
+	/** Charge in pounds reported by the gateway for the last successful request. */
+	private ?float $last_charged = null;
+
 	/**
 	 * Constructor.
 	 *
-	 * @param string $api_key OpenAI API key.
-	 * @param string $model Model name (default: gpt-4o).
+	 * @param string $model     OpenAI text model (gpt-4o or gpt-4o-mini).
+	 * @param string $purpose   One of the ats:content:* purposes.
+	 * @param string $reference Product/post/attachment id for the portal activity log.
 	 */
-	public function __construct(string $api_key, string $model = 'gpt-4o') {
-		$this->api_key = $api_key;
+	public function __construct(string $model = 'gpt-4o', string $purpose = 'ats:content:description', string $reference = '') {
 		$this->model = $model;
+		$this->purpose = $purpose;
+		$this->reference = $reference;
+	}
+
+	/** Pounds charged by the gateway for the last successful request, null before any. */
+	public function last_charged(): ?float {
+		return $this->last_charged;
 	}
 
 	/**
@@ -68,13 +74,6 @@ class OpenAI_Client {
 	 * @return array|\WP_Error Array with title, description, and token usage, or WP_Error on failure.
 	 */
 	public function generate_meta(string $prompt): array|\WP_Error {
-		if (empty($this->api_key)) {
-			return new \WP_Error(
-				'no_api_key',
-				__('OpenAI API key is not configured. Please add your API key in the settings.', 'rfs-ai-seo')
-			);
-		}
-
 		if (empty($prompt)) {
 			return new \WP_Error(
 				'empty_prompt',
@@ -103,30 +102,25 @@ class OpenAI_Client {
 	}
 
 	/**
-	 * Test the OpenAI API connection.
+	 * Check the gateway accepts this site's content key. Free: /models is not charged.
 	 *
-	 * @return bool|\WP_Error True on success, WP_Error on failure.
+	 * @return true|\WP_Error
 	 */
-	public function test_connection(): bool|\WP_Error {
-		if (empty($this->api_key)) {
-			return new \WP_Error(
-				'no_api_key',
-				__('API key is required to test the connection.', 'rfs-ai-seo')
-			);
+	public function test_connection(): true|\WP_Error {
+		if (!Portal::has_key('content')) {
+			return new \WP_Error('ats_portal_no_key', __('AI is not connected. Run: wp ats secret set gateway_key_content', 'rfs-ai-seo'));
 		}
-
-		// Simple test prompt.
-		$test_prompt = 'Respond with valid JSON: {"status": "ok"}';
-		$payload = $this->build_payload($test_prompt);
-
-		// Make the request.
-		$response = $this->make_request($payload);
-
+		$response = wp_remote_get(
+			Portal::openai_url('/models'),
+			['headers' => Portal::headers('content', 'ats:content:meta'), 'timeout' => 15]
+		);
 		if (is_wp_error($response)) {
-			return $response;
+			return new \WP_Error('ats_portal_unavailable', __('AI service unavailable, try again.', 'rfs-ai-seo'));
 		}
-
-		// If we got here, connection is successful.
+		$code = (int) wp_remote_retrieve_response_code($response);
+		if ($code !== 200) {
+			return Portal::error($code, (string) wp_remote_retrieve_body($response));
+		}
 		return true;
 	}
 
@@ -137,13 +131,6 @@ class OpenAI_Client {
 	 * @return array|\WP_Error Array with description and token usage, or WP_Error on failure.
 	 */
 	public function generate_description(string $prompt): array|\WP_Error {
-		if (empty($this->api_key)) {
-			return new \WP_Error(
-				'no_api_key',
-				__('OpenAI API key is not configured. Please add your API key in the settings.', 'rfs-ai-seo')
-			);
-		}
-
 		if (empty($prompt)) {
 			return new \WP_Error(
 				'empty_prompt',
@@ -192,13 +179,6 @@ class OpenAI_Client {
 	 * @return array|\WP_Error Array with alt_text and token usage, or WP_Error on failure.
 	 */
 	public function generate_alt_text(string $prompt): array|\WP_Error {
-		if (empty($this->api_key)) {
-			return new \WP_Error(
-				'no_api_key',
-				__('OpenAI API key is not configured. Please add your API key in the settings.', 'rfs-ai-seo')
-			);
-		}
-
 		if (empty($prompt)) {
 			return new \WP_Error(
 				'empty_prompt',
@@ -252,7 +232,6 @@ class OpenAI_Client {
 		$parsed = json_decode($content, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			error_log('RFS AI SEO: Invalid JSON response for alt text: ' . $content);
 			return new \WP_Error(
 				'invalid_json',
 				__('OpenAI did not return valid JSON. Please try again.', 'rfs-ai-seo')
@@ -260,7 +239,6 @@ class OpenAI_Client {
 		}
 
 		if (!isset($parsed['alt_text'])) {
-			error_log('RFS AI SEO: Missing alt_text in response: ' . $content);
 			return new \WP_Error(
 				'missing_fields',
 				__('OpenAI response is missing the alt_text field.', 'rfs-ai-seo')
@@ -276,6 +254,7 @@ class OpenAI_Client {
 		return [
 			'alt_text' => trim($parsed['alt_text']),
 			'tokens' => $tokens,
+			'charged_gbp' => $response['charged_gbp'] ?? null,
 		];
 	}
 
@@ -304,117 +283,56 @@ class OpenAI_Client {
 	}
 
 	/**
-	 * Make an API request to OpenAI.
+	 * Post a chat completion to the Red Frog portal gateway.
 	 *
-	 * @param array $payload Request payload.
-	 * @param int   $retry_count Current retry attempt.
-	 * @return array|\WP_Error Response data or WP_Error.
+	 * Network failures and 5xx responses are retried once, then surface as
+	 * ats_portal_unavailable. 4xx responses map through Portal::error().
+	 *
+	 * @param array $payload     Chat completion payload.
+	 * @param int   $retry_count Internal retry counter.
+	 * @return array|\WP_Error Decoded response with 'charged_gbp' added.
 	 */
 	private function make_request(array $payload, int $retry_count = 0): array|\WP_Error {
-		// Log the request (without the full API key).
-		error_log('RFS AI SEO: Making OpenAI API request - Model: ' . $this->model);
-		error_log('RFS AI SEO: API Key prefix: ' . substr($this->api_key, 0, 10) . '...');
+		if (!Portal::has_key('content')) {
+			return new \WP_Error(
+				'ats_portal_no_key',
+				__('AI is not connected. Run: wp ats secret set gateway_key_content', 'rfs-ai-seo')
+			);
+		}
 
 		$response = wp_remote_post(
-			self::API_ENDPOINT,
+			Portal::openai_url('/chat/completions'),
 			[
-				'headers' => [
-					'Authorization' => 'Bearer ' . $this->api_key,
-					'Content-Type' => 'application/json',
-				],
+				'headers' => Portal::headers('content', $this->purpose, $this->reference),
 				'body' => wp_json_encode($payload),
 				'timeout' => self::TIMEOUT,
 			]
 		);
 
-		// Check for network errors.
-		if (is_wp_error($response)) {
-			error_log('RFS AI SEO: Network error: ' . $response->get_error_message());
+		$code = is_wp_error($response) ? 0 : (int) wp_remote_retrieve_response_code($response);
 
-			// Retry once on network error.
+		if (is_wp_error($response) || $code >= 500) {
 			if ($retry_count < self::MAX_RETRIES) {
 				return $this->make_request($payload, $retry_count + 1);
 			}
-
-			return new \WP_Error(
-				'network_error',
-				sprintf(
-					/* translators: %s: error message */
-					__('Network error: %s', 'rfs-ai-seo'),
-					$response->get_error_message()
-				)
-			);
+			return new \WP_Error('ats_portal_unavailable', __('AI service unavailable, try again.', 'rfs-ai-seo'));
 		}
 
-		$response_code = wp_remote_retrieve_response_code($response);
-		$response_body = wp_remote_retrieve_body($response);
+		$body = (string) wp_remote_retrieve_body($response);
 
-		// Log the response.
-		error_log('RFS AI SEO: API Response Code: ' . $response_code);
-		error_log('RFS AI SEO: API Response Body (first 200 chars): ' . substr($response_body, 0, 200));
-
-		// Decode the response.
-		$data = json_decode($response_body, true);
-
-		// Handle HTTP errors.
-		if ($response_code !== 200) {
-			return $this->handle_api_error($response_code, $data);
+		if ($code !== 200) {
+			return Portal::error($code, $body);
 		}
 
-		// Check if we have a valid response structure.
-		if (!isset($data['choices'][0]['message']['content'])) {
-			error_log('RFS AI SEO: Invalid response structure - missing choices/message/content');
-			return new \WP_Error(
-				'invalid_response',
-				__('Invalid response structure from OpenAI API.', 'rfs-ai-seo')
-			);
+		$data = json_decode($body, true);
+		if (!is_array($data) || !isset($data['choices'][0]['message']['content'])) {
+			return new \WP_Error('invalid_response', __('Invalid response structure from the AI service.', 'rfs-ai-seo'));
 		}
+
+		$this->last_charged = Portal::observe($response);
+		$data['charged_gbp'] = $this->last_charged;
 
 		return $data;
-	}
-
-	/**
-	 * Handle API errors.
-	 *
-	 * @param int   $response_code HTTP response code.
-	 * @param array $data Response data.
-	 * @return \WP_Error Error object.
-	 */
-	private function handle_api_error(int $response_code, ?array $data): \WP_Error {
-		$error_message = $data['error']['message'] ?? __('Unknown error occurred.', 'rfs-ai-seo');
-
-		switch ($response_code) {
-			case 401:
-				return new \WP_Error(
-					'invalid_api_key',
-					__('Invalid API key. Please check your OpenAI API key in the settings.', 'rfs-ai-seo')
-				);
-
-			case 429:
-				return new \WP_Error(
-					'rate_limit',
-					__('Rate limit exceeded. Please wait a moment and try again.', 'rfs-ai-seo')
-				);
-
-			case 500:
-			case 502:
-			case 503:
-				return new \WP_Error(
-					'server_error',
-					__('OpenAI server error. Please try again later.', 'rfs-ai-seo')
-				);
-
-			default:
-				return new \WP_Error(
-					'api_error',
-					sprintf(
-						/* translators: 1: HTTP code, 2: error message */
-						__('API error (%1$d): %2$s', 'rfs-ai-seo'),
-						$response_code,
-						$error_message
-					)
-				);
-		}
 	}
 
 	/**
@@ -441,9 +359,6 @@ class OpenAI_Client {
 		$parsed = json_decode($content, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			// Log the raw response for debugging.
-			error_log('RFS AI SEO: Invalid JSON response: ' . $content);
-
 			return new \WP_Error(
 				'invalid_json',
 				__('OpenAI did not return valid JSON. Please try again.', 'rfs-ai-seo')
@@ -452,8 +367,6 @@ class OpenAI_Client {
 
 		// Validate required fields.
 		if (!isset($parsed['title']) || !isset($parsed['description'])) {
-			error_log('RFS AI SEO: Missing title or description in response: ' . $content);
-
 			return new \WP_Error(
 				'missing_fields',
 				__('OpenAI response is missing required fields (title or description).', 'rfs-ai-seo')
@@ -471,6 +384,7 @@ class OpenAI_Client {
 			'title' => trim($parsed['title']),
 			'description' => trim($parsed['description']),
 			'tokens' => $tokens,
+			'charged_gbp' => $response['charged_gbp'] ?? null,
 		];
 	}
 
@@ -498,9 +412,6 @@ class OpenAI_Client {
 		$parsed = json_decode($content, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			// Log the raw response for debugging.
-			error_log('RFS AI SEO: Invalid JSON response: ' . $content);
-
 			return new \WP_Error(
 				'invalid_json',
 				__('OpenAI did not return valid JSON. Please try again.', 'rfs-ai-seo')
@@ -509,8 +420,6 @@ class OpenAI_Client {
 
 		// Validate required field.
 		if (!isset($parsed['description'])) {
-			error_log('RFS AI SEO: Missing description in response: ' . $content);
-
 			return new \WP_Error(
 				'missing_fields',
 				__('OpenAI response is missing the description field.', 'rfs-ai-seo')
@@ -527,6 +436,7 @@ class OpenAI_Client {
 		return [
 			'description' => trim($parsed['description']),
 			'tokens' => $tokens,
+			'charged_gbp' => $response['charged_gbp'] ?? null,
 		];
 	}
 
