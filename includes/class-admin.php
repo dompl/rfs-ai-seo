@@ -379,7 +379,11 @@ class Admin {
 				update_option($name, (string) absint($_POST[$name]));
 			}
 		}
-		update_option('rfs_ai_seo_include_features', empty($_POST['rfs_ai_seo_include_features']) ? '0' : '1');
+		// Only the content tab posts this checkbox's tab-mate (the tone select); guard
+		// so saving another tab never clobbers it back to '0'.
+		if (isset($_POST['rfs_ai_seo_content_tone'])) {
+			update_option('rfs_ai_seo_include_features', empty($_POST['rfs_ai_seo_include_features']) ? '0' : '1');
+		}
 
 		// Save prompt templates.
 		if (isset($_POST['rfs_ai_seo_prompt_product'])) {

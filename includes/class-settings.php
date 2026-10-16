@@ -196,30 +196,30 @@ class Settings {
 	}
 
 	public function get_image_quality(): string {
-		$v = (string) get_option('rfs_ai_seo_image_quality', 'medium');
+		$v = (string) $this->get_option('rfs_ai_seo_image_quality', 'medium');
 		return in_array($v, self::IMAGE_QUALITIES, true) ? $v : 'medium';
 	}
 
 	public function get_image_size(): string {
-		$v = (string) get_option('rfs_ai_seo_image_size', '1024x1024');
+		$v = (string) $this->get_option('rfs_ai_seo_image_size', '1024x1024');
 		return in_array($v, self::IMAGE_SIZES, true) ? $v : '1024x1024';
 	}
 
 	public function get_content_tone(): string {
-		$v = (string) get_option('rfs_ai_seo_content_tone', 'professional');
+		$v = (string) $this->get_option('rfs_ai_seo_content_tone', 'professional');
 		return array_key_exists($v, self::tones()) ? $v : 'professional';
 	}
 
 	public function get_description_words(): int {
-		return max(50, min(1000, (int) get_option('rfs_ai_seo_description_words', 150) ?: 150));
+		return max(50, min(1000, (int) $this->get_option('rfs_ai_seo_description_words', 150)));
 	}
 
 	public function get_short_sentences(): int {
-		return max(1, min(6, (int) get_option('rfs_ai_seo_short_sentences', 2) ?: 2));
+		return max(1, min(6, (int) $this->get_option('rfs_ai_seo_short_sentences', 2)));
 	}
 
 	public function get_include_features(): bool {
-		return get_option('rfs_ai_seo_include_features', '1') === '1';
+		return $this->get_option('rfs_ai_seo_include_features', '1') === '1';
 	}
 
 	/**
