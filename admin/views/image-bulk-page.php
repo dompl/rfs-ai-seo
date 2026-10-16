@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 $settings = new \RFS_AI_SEO\Settings();
 $image_prompts = $settings->get_image_prompts();
 $aspect_ratio = '1:1';
-$cost_estimate = (new \RFS_AI_SEO\Usage_Logger())->average_charge('image');
+$cost_estimate = (new \RFS_AI_SEO\Usage_Logger())->average_charge('image_generation');
 ?>
 
 <div class="wrap rfs-ai-seo-bulk-generator">

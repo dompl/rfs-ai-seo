@@ -20,7 +20,7 @@ foreach (['get_api_key', 'get_cost_multiplier', 'get_spending_cap', 'get_gemini_
 	rfs_assert(!method_exists($settings, $m), "Settings::{$m} removed");
 }
 
-rfs_assert(!has_action('wp_ajax_rfs_ai_create_checkout'), 'checkout AJAX unhooked');
-rfs_assert(!has_action('wp_ajax_rfs_ai_test_stripe'), 'stripe test AJAX unhooked');
+rfs_assert(!has_action('wp_ajax_rfs_ai_seo_create_checkout'), 'checkout AJAX unhooked');
+rfs_assert(!has_action('wp_ajax_rfs_ai_seo_test_stripe'), 'stripe test AJAX unhooked');
 
 rfs_done('removed');
