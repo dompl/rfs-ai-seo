@@ -45,13 +45,6 @@ class Description_Generator {
 	 * @return array|WP_Error Result array or WP_Error on failure.
 	 */
 	public function generate_for_product(int $product_id): array|\WP_Error {
-		// Check spending cap / credit balance.
-		$logger = new Usage_Logger();
-		$cap_check = $logger->check_spending_cap();
-		if (!$cap_check['allowed']) {
-			return new \WP_Error('spending_cap', $cap_check['message']);
-		}
-
 		// Get product.
 		$product = wc_get_product($product_id);
 		if (!$product) {
@@ -454,13 +447,6 @@ class Description_Generator {
 	 * @return array|WP_Error Result array or WP_Error on failure.
 	 */
 	public function generate_short_description_for_product(int $product_id): array|\WP_Error {
-		// Check spending cap / credit balance.
-		$logger = new Usage_Logger();
-		$cap_check = $logger->check_spending_cap();
-		if (!$cap_check['allowed']) {
-			return new \WP_Error('spending_cap', $cap_check['message']);
-		}
-
 		// Get product.
 		$product = wc_get_product($product_id);
 		if (!$product) {

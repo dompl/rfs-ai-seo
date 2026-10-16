@@ -321,13 +321,6 @@ class Image_Generator {
 			]);
 		}
 
-		// Check spending cap / credit balance.
-		$logger = new Usage_Logger();
-		$cap_check = $logger->check_spending_cap();
-		if (!$cap_check['allowed']) {
-			wp_send_json_error(['message' => $cap_check['message']]);
-		}
-
 		// Get attachment ID.
 		$attachment_id = isset($_POST['attachment_id']) ? absint($_POST['attachment_id']) : 0;
 		$aspect_ratio = isset($_POST['aspect_ratio']) ? sanitize_text_field($_POST['aspect_ratio']) : '';
@@ -1230,13 +1223,6 @@ class Image_Generator {
 			]);
 		}
 
-		// Check spending cap / credit balance.
-		$logger = new Usage_Logger();
-		$cap_check = $logger->check_spending_cap();
-		if (!$cap_check['allowed']) {
-			wp_send_json_error(['message' => $cap_check['message']]);
-		}
-
 		$post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
 		$prompt_template = isset($_POST['prompt_template']) ? sanitize_text_field($_POST['prompt_template']) : '';
 		$custom_prompt = isset($_POST['custom_prompt']) ? sanitize_textarea_field($_POST['custom_prompt']) : '';
@@ -1569,13 +1555,6 @@ class Image_Generator {
 			wp_send_json_error([
 				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
 			]);
-		}
-
-		// Check spending cap / credit balance.
-		$logger = new Usage_Logger();
-		$cap_check = $logger->check_spending_cap();
-		if (!$cap_check['allowed']) {
-			wp_send_json_error(['message' => $cap_check['message']]);
 		}
 
 		$attachment_id = isset($_POST['attachment_id']) ? absint($_POST['attachment_id']) : 0;

@@ -37,13 +37,6 @@ class Alt_Text_Generator {
 	 * @return array|\WP_Error Result array or WP_Error on failure.
 	 */
 	public function generate_for_image(int $attachment_id, int $product_id): array|\WP_Error {
-		// Check spending cap / credit balance.
-		$logger = new Usage_Logger();
-		$cap_check = $logger->check_spending_cap();
-		if (!$cap_check['allowed']) {
-			return new \WP_Error('spending_cap', $cap_check['message']);
-		}
-
 		// Validate attachment exists and is an image.
 		$attachment = get_post($attachment_id);
 		if (!$attachment || !wp_attachment_is_image($attachment_id)) {
@@ -90,6 +83,7 @@ class Alt_Text_Generator {
 		}
 
 		// Log generation.
+		$logger = new Usage_Logger();
 		$logger->log(
 			$attachment_id,
 			'alt_text',
@@ -98,6 +92,7 @@ class Alt_Text_Generator {
 				'tokens_completion'    => $result['tokens']['completion'] ?? 0,
 				'tokens_total'         => $result['tokens']['total'] ?? 0,
 				'model'                => $model,
+				'charged_gbp'          => $result['charged_gbp'] ?? 0,
 				'generated_title'      => '',
 				'generated_description' => $result['alt_text'],
 			]
