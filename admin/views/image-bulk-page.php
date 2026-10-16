@@ -12,8 +12,8 @@ if (!defined('ABSPATH')) {
 
 $settings = new \RFS_AI_SEO\Settings();
 $image_prompts = $settings->get_image_prompts();
-$aspect_ratio = $settings->get_image_aspect_ratio();
-$cost_estimate = \RFS_AI_SEO\Image_Generator::estimate_cost_per_image($settings->get_image_model());
+$aspect_ratio = '1:1';
+$cost_estimate = (new \RFS_AI_SEO\Usage_Logger())->average_charge('image');
 ?>
 
 <div class="wrap rfs-ai-seo-bulk-generator">
@@ -110,13 +110,17 @@ $cost_estimate = \RFS_AI_SEO\Image_Generator::estimate_cost_per_image($settings-
 			</tr>
 		</table>
 		<p class="description">
-			<?php
-			printf(
-				/* translators: %s: estimated cost per image */
-				esc_html__('Estimated cost per image: %s', 'rfs-ai-seo'),
-				esc_html($settings->format_cost($cost_estimate, 4))
-			);
-			?>
+			<?php if ($cost_estimate !== null) : ?>
+				<?php
+				printf(
+					/* translators: %s: average cost per image from recent generations */
+					esc_html__('Average cost per image (last 20 generations): %s', 'rfs-ai-seo'),
+					esc_html($settings->format_gbp($cost_estimate))
+				);
+				?>
+			<?php else : ?>
+				<?php esc_html_e('No image generations recorded yet.', 'rfs-ai-seo'); ?>
+			<?php endif; ?>
 		</p>
 	</div>
 
@@ -216,7 +220,7 @@ $cost_estimate = \RFS_AI_SEO\Image_Generator::estimate_cost_per_image($settings-
 				<div class="rfs-stat-icon">&#9873;</div>
 				<div class="rfs-stat-content">
 					<div class="rfs-stat-value" id="rfs_image_progress_cost">
-						<?php echo esc_html($settings->get_currency_symbol()); ?>0.0000
+						&#163;0.0000
 					</div>
 					<div class="rfs-stat-label"><?php esc_html_e('Cost', 'rfs-ai-seo'); ?></div>
 				</div>

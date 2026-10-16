@@ -12,8 +12,7 @@ if (!defined('ABSPATH')) {
 
 // Get settings.
 $settings = new \RFS_AI_SEO\Settings();
-$api_key = $settings->get_api_key();
-$has_api_key = !empty($api_key);
+$has_api_key = \RedFrogStudio\AtsAiPortal\Portal::has_key('content');
 
 // Get usage stats.
 $logger = new \RFS_AI_SEO\Usage_Logger();
@@ -25,8 +24,8 @@ $stats = $logger->get_stats('month');
 
 	<?php if (!$has_api_key): ?>
 		<div class="notice notice-warning">
-			<h3><?php esc_html_e('API Key Required', 'rfs-ai-seo'); ?></h3>
-			<p><?php esc_html_e('To start using RFS AI, you need to configure your OpenAI API key in Settings.', 'rfs-ai-seo'); ?></p>
+			<h3><?php esc_html_e('AI Not Connected', 'rfs-ai-seo'); ?></h3>
+			<p><?php esc_html_e('AI is not connected. Run: wp ats secret set gateway_key_content to add the gateway key.', 'rfs-ai-seo'); ?></p>
 			<p>
 				<a href="<?php echo esc_url(admin_url('admin.php?page=rfs-ai-settings')); ?>" class="button button-primary">
 					<?php esc_html_e('Go to Settings', 'rfs-ai-seo'); ?>
@@ -34,25 +33,6 @@ $stats = $logger->get_stats('month');
 			</p>
 		</div>
 	<?php endif; ?>
-
-	<!-- Credit Balance -->
-	<?php
-	\RFS_AI_SEO\Credits_Manager::maybe_init_balance();
-	$credit_balance = \RFS_AI_SEO\Credits_Manager::get_balance();
-	?>
-	<div class="rfs-dashboard-credits">
-		<div class="rfs-dashboard-credits-inner">
-			<span class="rfs-dashboard-credits-label"><?php esc_html_e('Credit Balance:', 'rfs-ai-seo'); ?></span>
-			<span class="rfs-dashboard-credits-amount <?php echo $credit_balance < 1.00 ? 'rfs-credits-low' : ''; ?>">
-				<?php echo esc_html("\xC2\xA3" . number_format($credit_balance, 2)); ?>
-			</span>
-			<?php if ($credit_balance < 1.00): ?>
-				<a href="<?php echo esc_url(admin_url('admin.php?page=rfs-ai-credits')); ?>" class="button button-small">
-					<?php esc_html_e('Buy Credits', 'rfs-ai-seo'); ?>
-				</a>
-			<?php endif; ?>
-		</div>
-	</div>
 
 	<!-- Tools Grid -->
 	<div class="rfs-dashboard-tools">
@@ -104,8 +84,8 @@ $stats = $logger->get_stats('month');
 						<span class="rfs-dashboard-stat-label"><?php esc_html_e('Tokens', 'rfs-ai-seo'); ?></span>
 					</div>
 					<div class="rfs-dashboard-stat">
-						<span class="rfs-dashboard-stat-value"><?php echo esc_html($settings->format_cost($stats['estimated_cost'])); ?></span>
-						<span class="rfs-dashboard-stat-label"><?php esc_html_e('Est. Cost', 'rfs-ai-seo'); ?></span>
+						<span class="rfs-dashboard-stat-value"><?php echo esc_html($settings->format_gbp((float) $stats['charged_gbp'])); ?></span>
+						<span class="rfs-dashboard-stat-label"><?php esc_html_e('Spent', 'rfs-ai-seo'); ?></span>
 					</div>
 				</div>
 				<a href="<?php echo esc_url(admin_url('admin.php?page=rfs-ai-stats')); ?>" class="rfs-dashboard-stats-link">

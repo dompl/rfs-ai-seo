@@ -160,8 +160,6 @@ final class RFS_AI_SEO {
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-usage-logger.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-image-generator.php';
 		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-alt-text-generator.php';
-		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-credits-manager.php';
-		require_once RFS_AI_SEO_PLUGIN_DIR . 'includes/class-stripe-client.php';
 	}
 
 	/**
@@ -281,7 +279,6 @@ final class RFS_AI_SEO {
 			'rfs-ai_page_rfs-ai-trainer',
 			'rfs-ai_page_rfs-ai-image-bulk',
 			'rfs-ai_page_rfs-ai-alt-text-bulk',
-			'rfs-ai_page_rfs-ai-credits',
 			'rfs-ai_page_rfs-ai-stats',
 		];
 
@@ -473,10 +470,6 @@ final class RFS_AI_SEO {
 				true
 			);
 
-			$image_cost_est = Image_Generator::estimate_cost_per_image(
-				$this->settings->get_image_model()
-			);
-
 			// Localize image bulk generator script with its own dedicated global
 			// to avoid being overwritten by the main rfsAiSeo localization below.
 			wp_localize_script(
@@ -485,9 +478,6 @@ final class RFS_AI_SEO {
 				[
 					'ajaxUrl' => admin_url('admin-ajax.php'),
 					'nonce' => wp_create_nonce('rfs_ai_seo_nonce'),
-					'imageCostEstimate' => $image_cost_est,
-					'imageCostEstimateFormatted' => $this->settings->format_cost($image_cost_est, 4),
-					'currencySymbol' => $this->settings->get_currency_symbol(),
 					'strings' => [
 						'generating' => __('Generating...', 'rfs-ai-seo'),
 						'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),
@@ -523,37 +513,6 @@ final class RFS_AI_SEO {
 			);
 		}
 
-		// Enqueue credits page JS.
-		if ($hook === 'rfs-ai_page_rfs-ai-credits') {
-			$credits_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/credits.js';
-			wp_enqueue_script(
-				'rfs-ai-credits',
-				RFS_AI_SEO_PLUGIN_URL . 'admin/js/credits.js',
-				['jquery'],
-				RFS_AI_SEO_VERSION . '.' . (file_exists($credits_js) ? filemtime($credits_js) : '0'),
-				true
-			);
-
-			wp_localize_script(
-				'rfs-ai-credits',
-				'rfsAiCredits',
-				[
-					'ajaxUrl' => admin_url('admin-ajax.php'),
-					'nonce'   => wp_create_nonce('rfs_ai_seo_nonce'),
-					'strings' => [
-						'processing' => __('Processing...', 'rfs-ai-seo'),
-						'error'      => __('An error occurred. Please try again.', 'rfs-ai-seo'),
-						'redirecting' => __('Redirecting to Stripe...', 'rfs-ai-seo'),
-					],
-				]
-			);
-		}
-
-		// Calculate image cost estimate for localization.
-		$image_cost_estimate = Image_Generator::estimate_cost_per_image(
-			$this->settings->get_image_model()
-		);
-
 		// Localize admin script with AJAX URL and nonce.
 		wp_localize_script(
 			'rfs-ai-seo-admin',
@@ -561,9 +520,7 @@ final class RFS_AI_SEO {
 			[
 				'ajaxUrl' => admin_url('admin-ajax.php'),
 				'nonce' => wp_create_nonce('rfs_ai_seo_nonce'),
-				'imageCostEstimate' => $image_cost_estimate,
-				'imageCostEstimateFormatted' => $this->settings->format_cost($image_cost_estimate, 4),
-				'currencySymbol' => $this->settings->get_currency_symbol(),
+				'imageEstimate' => (new Usage_Logger())->average_charge('image_generation'),
 				'strings' => [
 					'generating' => __('Generating...', 'rfs-ai-seo'),
 					'error' => __('An error occurred. Please try again.', 'rfs-ai-seo'),
@@ -625,9 +582,6 @@ final class RFS_AI_SEO {
 
 		// Set default options.
 		self::set_default_options();
-
-		// Initialise credit balance with free allowance.
-		Credits_Manager::maybe_init_balance();
 
 		// Set DB version.
 		update_option('rfs_ai_seo_db_version', RFS_AI_SEO_VERSION);

@@ -33,8 +33,6 @@ class Admin {
 
 		// Register AJAX handlers.
 		add_action('wp_ajax_rfs_ai_seo_test_connection', [$this, 'ajax_test_connection']);
-		add_action('wp_ajax_rfs_ai_seo_create_checkout', [$this, 'ajax_create_checkout']);
-		add_action('wp_ajax_rfs_ai_seo_test_stripe', [$this, 'ajax_test_stripe']);
 
 		// Register admin post handlers.
 		add_action('admin_post_rfs_ai_seo_export_csv', [$this, 'export_csv']);
@@ -135,16 +133,6 @@ class Admin {
 			'manage_options',
 			'rfs-ai-alt-text-bulk',
 			[$this, 'render_alt_text_bulk_page']
-		);
-
-		// Buy Credits.
-		add_submenu_page(
-			'rfs-ai',
-			__('Buy Credits - Pre-paid AI Generation Credits', 'rfs-ai-seo'),
-			__('Buy Credits', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-credits',
-			[$this, 'render_credits_page']
 		);
 
 		// Usage Statistics.
@@ -369,226 +357,12 @@ class Admin {
 	}
 
 	/**
-	 * Render credits page.
-	 *
-	 * @return void
-	 */
-	public function render_credits_page(): void {
-		if (!current_user_can('manage_options')) {
-			wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'rfs-ai-seo'));
-		}
-
-		// Ensure balance is initialised.
-		Credits_Manager::maybe_init_balance();
-
-		// Handle Stripe return.
-		if (isset($_GET['stripe_session_id'])) {
-			$this->handle_stripe_return(sanitize_text_field($_GET['stripe_session_id']));
-		}
-
-		// Show manual top-up success notice.
-		$topup_notice = get_transient('rfs_ai_seo_topup_notice');
-		if ($topup_notice) {
-			delete_transient('rfs_ai_seo_topup_notice');
-			add_settings_error(
-				'rfs_ai_seo_messages',
-				'rfs_ai_seo_topup_success',
-				$topup_notice,
-				'success'
-			);
-		}
-
-		include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/credits-page.php';
-	}
-
-	/**
-	 * Handle Stripe return after payment.
-	 *
-	 * @param string $session_id Stripe Checkout Session ID.
-	 * @return void
-	 */
-	private function handle_stripe_return(string $session_id): void {
-		$settings = new Settings();
-		$secret_key = $settings->get_stripe_secret_key();
-
-		if (empty($secret_key)) {
-			add_settings_error(
-				'rfs_ai_seo_messages',
-				'rfs_ai_seo_message',
-				__('Stripe is not configured. Cannot verify payment.', 'rfs-ai-seo'),
-				'error'
-			);
-			return;
-		}
-
-		$stripe = new Stripe_Client($secret_key);
-		$session = $stripe->retrieve_checkout_session($session_id);
-
-		if (is_wp_error($session)) {
-			add_settings_error(
-				'rfs_ai_seo_messages',
-				'rfs_ai_seo_message',
-				$session->get_error_message(),
-				'error'
-			);
-			return;
-		}
-
-		$payment_status = $session['payment_status'] ?? '';
-
-		if ($payment_status !== 'paid') {
-			add_settings_error(
-				'rfs_ai_seo_messages',
-				'rfs_ai_seo_message',
-				__('Payment was not completed. Please try again.', 'rfs-ai-seo'),
-				'error'
-			);
-			return;
-		}
-
-		$metadata = $session['metadata'] ?? [];
-		$credits_gbp = (float) ($metadata['credits_gbp'] ?? 0);
-		$package_id = $metadata['package_id'] ?? '';
-
-		if ($credits_gbp <= 0) {
-			add_settings_error(
-				'rfs_ai_seo_messages',
-				'rfs_ai_seo_message',
-				__('Invalid credit amount in payment session.', 'rfs-ai-seo'),
-				'error'
-			);
-			return;
-		}
-
-		$added = Credits_Manager::add_credits($credits_gbp, $session_id, $package_id);
-
-		if ($added) {
-			add_settings_error(
-				'rfs_ai_seo_messages',
-				'rfs_ai_seo_message',
-				sprintf(
-					/* translators: %s: credit amount */
-					__('Payment successful! %s credits have been added to your balance.', 'rfs-ai-seo'),
-					"\xC2\xA3" . number_format($credits_gbp, 2)
-				),
-				'success'
-			);
-		} else {
-			add_settings_error(
-				'rfs_ai_seo_messages',
-				'rfs_ai_seo_message',
-				__('This payment has already been processed.', 'rfs-ai-seo'),
-				'info'
-			);
-		}
-	}
-
-	/**
-	 * AJAX handler for creating a Stripe Checkout Session.
-	 *
-	 * @return void
-	 */
-	public function ajax_create_checkout(): void {
-		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
-
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error([
-				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
-			]);
-		}
-
-		$package_id = isset($_POST['package_id']) ? sanitize_text_field($_POST['package_id']) : '';
-		$packages = Credits_Manager::get_packages();
-
-		if (!isset($packages[$package_id])) {
-			wp_send_json_error([
-				'message' => __('Invalid package selected.', 'rfs-ai-seo'),
-			]);
-		}
-
-		$settings = new Settings();
-		$secret_key = $settings->get_stripe_secret_key();
-
-		if (empty($secret_key)) {
-			wp_send_json_error([
-				'message' => __('Stripe is not configured. Please add your Stripe keys in Settings.', 'rfs-ai-seo'),
-			]);
-		}
-
-		$package = $packages[$package_id];
-		$credits_page_url = admin_url('admin.php?page=rfs-ai-credits');
-		$success_url = add_query_arg('stripe_session_id', '{CHECKOUT_SESSION_ID}', $credits_page_url);
-		$cancel_url = $credits_page_url;
-
-		$stripe = new Stripe_Client($secret_key);
-		$result = $stripe->create_checkout_session($package, $success_url, $cancel_url);
-
-		if (is_wp_error($result)) {
-			wp_send_json_error([
-				'message' => $result->get_error_message(),
-			]);
-		}
-
-		wp_send_json_success([
-			'checkout_url' => $result['checkout_url'],
-		]);
-	}
-
-	/**
-	 * AJAX handler for testing Stripe connection.
-	 *
-	 * @return void
-	 */
-	public function ajax_test_stripe(): void {
-		check_ajax_referer('rfs_ai_seo_nonce', 'nonce');
-
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error([
-				'message' => __('You do not have permission to perform this action.', 'rfs-ai-seo'),
-			]);
-		}
-
-		$settings = new Settings();
-		$secret_key = $settings->get_stripe_secret_key();
-
-		if (empty($secret_key)) {
-			wp_send_json_error([
-				'message' => __('Stripe secret key is not configured.', 'rfs-ai-seo'),
-			]);
-		}
-
-		$stripe = new Stripe_Client($secret_key);
-		$result = $stripe->verify_account();
-
-		if (is_wp_error($result)) {
-			wp_send_json_error([
-				'message' => $result->get_error_message(),
-			]);
-		}
-
-		wp_send_json_success([
-			'message' => __('Stripe account verified successfully! Connected to Red Frog Studio account.', 'rfs-ai-seo'),
-		]);
-	}
-
-	/**
 	 * Save settings.
 	 *
 	 * @return void
 	 */
 	private function save_settings(): void {
 		$settings = new Settings();
-
-		// Save API settings.
-		// Only save API key to database if not defined as constant.
-		if (!$settings->is_api_key_constant() && isset($_POST['rfs_ai_seo_openai_api_key'])) {
-			$api_key = sanitize_text_field($_POST['rfs_ai_seo_openai_api_key']);
-			// Only update if a new key was entered (non-empty).
-			// Empty value means keep the existing key.
-			if (!empty($api_key)) {
-				$settings->update_option('rfs_ai_seo_openai_api_key', $api_key);
-			}
-		}
 
 		if (isset($_POST['rfs_ai_seo_openai_model'])) {
 			update_option('rfs_ai_seo_openai_model', sanitize_text_field($_POST['rfs_ai_seo_openai_model']));
@@ -654,47 +428,6 @@ class Admin {
 			update_option('rfs_ai_seo_acf_fields', $acf_fields);
 		}
 
-		// Save Stripe keys.
-		if (!$settings->is_stripe_secret_constant() && isset($_POST['rfs_ai_seo_stripe_secret_key'])) {
-			$stripe_secret = sanitize_text_field($_POST['rfs_ai_seo_stripe_secret_key']);
-			if (!empty($stripe_secret)) {
-				$settings->update_option('rfs_ai_seo_stripe_secret_key', $stripe_secret);
-			}
-		}
-
-		if (!$settings->is_stripe_publishable_constant() && isset($_POST['rfs_ai_seo_stripe_publishable_key'])) {
-			$stripe_pub = sanitize_text_field($_POST['rfs_ai_seo_stripe_publishable_key']);
-			// Publishable key is not a secret, allow saving even if empty (to clear it).
-			update_option('rfs_ai_seo_stripe_publishable_key', $stripe_pub);
-		}
-
-		// Save Gemini API key.
-		if (!$settings->is_gemini_key_constant() && isset($_POST['rfs_ai_seo_gemini_api_key'])) {
-			$gemini_key = sanitize_text_field($_POST['rfs_ai_seo_gemini_api_key']);
-			if (!empty($gemini_key)) {
-				$settings->update_option('rfs_ai_seo_gemini_api_key', $gemini_key);
-			}
-		}
-
-		// Save image generation settings.
-		if (isset($_POST['rfs_ai_seo_image_model'])) {
-			update_option('rfs_ai_seo_image_model', sanitize_text_field($_POST['rfs_ai_seo_image_model']));
-		}
-
-		if (isset($_POST['rfs_ai_seo_image_aspect_ratio'])) {
-			update_option('rfs_ai_seo_image_aspect_ratio', sanitize_text_field($_POST['rfs_ai_seo_image_aspect_ratio']));
-		}
-
-		// Save display currency.
-		if (isset($_POST['rfs_ai_seo_display_currency'])) {
-			$currency = sanitize_text_field($_POST['rfs_ai_seo_display_currency']);
-			if (in_array($currency, ['USD', 'GBP', 'EUR'], true)) {
-				update_option('rfs_ai_seo_display_currency', $currency);
-				// Clear cached exchange rates so fresh rates are fetched.
-				delete_transient('rfs_ai_seo_exchange_rates');
-			}
-		}
-
 		// Add success notice.
 		add_settings_error(
 			'rfs_ai_seo_messages',
@@ -753,26 +486,17 @@ class Admin {
 		$settings = new Settings();
 		$model = $settings->get_model();
 
-		// Create OpenAI client.
-		$client = new OpenAI_Client($model, 'ats:content:meta');
-
-		// Test connection.
-		$result = $client->test_connection();
+		$result = (new OpenAI_Client($model, 'ats:content:meta'))->test_connection();
 
 		if (is_wp_error($result)) {
-			error_log('RFS AI SEO Test Connection Error: ' . $result->get_error_message());
 			wp_send_json_error([
 				'message' => $result->get_error_message(),
+				'code' => $result->get_error_code(),
 			]);
 		}
 
-		// Success.
 		wp_send_json_success([
-			'message' => sprintf(
-				/* translators: %s: model name */
-				__('Connection successful! Using model: %s', 'rfs-ai-seo'),
-				$model
-			),
+			'message' => __('Connected to the Red Frog AI portal.', 'rfs-ai-seo'),
 		]);
 	}
 

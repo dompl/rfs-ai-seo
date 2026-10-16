@@ -33,6 +33,13 @@ $options = [
 	'rfs_ai_seo_credits_purchases',
 	'rfs_ai_seo_stripe_secret_key',
 	'rfs_ai_seo_stripe_publishable_key',
+	'rfs_ai_seo_version',
+	'rfs_ai_seo_image_quality',
+	'rfs_ai_seo_image_size',
+	'rfs_ai_seo_content_tone',
+	'rfs_ai_seo_description_words',
+	'rfs_ai_seo_short_sentences',
+	'rfs_ai_seo_include_features',
 ];
 
 foreach ($options as $option) {

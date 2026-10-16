@@ -63,43 +63,6 @@
 	}
 
 	/**
-	 * Test Stripe Connection Button
-	 */
-	$('#rfs-test-stripe').on('click', function(e) {
-		e.preventDefault();
-		var $button = $(this);
-		var $spinner = $('#rfs-test-stripe-spinner');
-		var $result = $('#rfs-test-stripe-result');
-
-		$result.html('');
-		$spinner.addClass('is-active');
-		$button.prop('disabled', true);
-
-		$.ajax({
-			url: rfsAiSeo.ajaxUrl,
-			type: 'POST',
-			data: {
-				action: 'rfs_ai_seo_test_stripe',
-				nonce: rfsAiSeo.nonce
-			},
-			success: function(response) {
-				if (response.success) {
-					$result.html('<div class="notice notice-success inline"><p>' + response.data.message + '</p></div>');
-				} else {
-					$result.html('<div class="notice notice-error inline"><p>' + response.data.message + '</p></div>');
-				}
-			},
-			error: function() {
-				$result.html('<div class="notice notice-error inline"><p>' + rfsAiSeo.strings.error + '</p></div>');
-			},
-			complete: function() {
-				$spinner.removeClass('is-active');
-				$button.prop('disabled', false);
-			}
-		});
-	});
-
-	/**
 	 * Initialize Meta Box functionality
 	 */
 	function initMetaBox() {

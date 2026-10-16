@@ -194,9 +194,9 @@
 			);
 
 			// Update cost estimate.
-			const sym = rfsAiImageBulk.currencySymbol || '$';
+			const sym = '£';
 			if (count > 0) {
-				const perImage = parseFloat(rfsAiImageBulk.imageCostEstimate) || 0;
+				const perImage = parseFloat(rfsAiSeo.imageEstimate) || 0;
 				const totalEst = (perImage * count).toFixed(4);
 				$('#rfs_image_bulk_cost_estimate').text(
 					'Est. cost: ' + sym + totalEst + ' (' + count + ' images)'
@@ -321,7 +321,7 @@
 			$('#rfs_image_progress_replaced').text('0');
 			$('#rfs_image_progress_skipped').text('0');
 			$('#rfs_image_progress_failed').text('0');
-			const sym = rfsAiImageBulk.currencySymbol || '$';
+			const sym = '£';
 			$('#rfs_image_progress_cost').text(sym + '0.0000');
 			$('#rfs_image_progress_bar').css('width', '0%');
 
@@ -622,7 +622,7 @@
 			$('#rfs_image_progress_replaced').text(this.results.replaced);
 			$('#rfs_image_progress_skipped').text(this.results.skipped);
 			$('#rfs_image_progress_failed').text(this.results.failed);
-			const sym = rfsAiImageBulk.currencySymbol || '$';
+			const sym = '£';
 			$('#rfs_image_progress_cost').text(sym + this.totalCost.toFixed(4));
 		},
 
@@ -663,7 +663,7 @@
 			});
 
 			// Update summary.
-			const sym = rfsAiImageBulk.currencySymbol || '$';
+			const sym = '£';
 			$('#rfs_image_summary_total').text(this.totalProcessed);
 			$('#rfs_image_summary_replaced').text(this.results.replaced);
 			$('#rfs_image_summary_skipped').text(this.results.skipped);

@@ -15,34 +15,8 @@ if (!defined('ABSPATH')) {
 	<h1><?php esc_html_e('Usage Statistics', 'rfs-ai-seo'); ?></h1>
 
 	<?php
-	// Get settings for currency formatting.
 	$settings = new \RFS_AI_SEO\Settings();
-
-	// Check spending cap status.
-	$cap_status = $logger->check_spending_cap();
-	if ($cap_status['cap'] > 0) :
-		$percentage = ($cap_status['current_cost'] / $cap_status['cap']) * 100;
-		$bar_class = $percentage >= 100 ? 'danger' : ($percentage >= 80 ? 'warning' : 'success');
-		?>
-		<!-- Spending Cap Notice -->
-		<div class="notice notice-<?php echo $percentage >= 100 ? 'error' : ($percentage >= 80 ? 'warning' : 'info'); ?> inline">
-			<p>
-				<strong><?php esc_html_e('Monthly Spending Cap:', 'rfs-ai-seo'); ?></strong>
-				<?php
-				printf(
-					/* translators: 1: Current spending, 2: Cap limit, 3: Remaining */
-					esc_html__('%1$s of %2$s used this month (%3$s remaining)', 'rfs-ai-seo'),
-					esc_html($settings->format_cost($cap_status['current_cost'])),
-					esc_html($settings->format_cost($cap_status['cap'])),
-					esc_html($settings->format_cost($cap_status['remaining']))
-				);
-				?>
-			</p>
-			<div class="rfs-spending-bar">
-				<div class="rfs-spending-bar-fill <?php echo esc_attr($bar_class); ?>" style="width: <?php echo min(100, $percentage); ?>%"></div>
-			</div>
-		</div>
-	<?php endif; ?>
+	?>
 
 	<!-- Summary Cards -->
 	<div class="rfs-ai-seo-stats-cards">
@@ -57,8 +31,8 @@ if (!defined('ABSPATH')) {
 		</div>
 
 		<div class="rfs-ai-seo-stat-card">
-			<div class="number"><?php echo esc_html($settings->format_cost($stats['estimated_cost'])); ?></div>
-			<div class="label"><?php esc_html_e('Estimated cost this month', 'rfs-ai-seo'); ?></div>
+			<div class="number"><?php echo esc_html($settings->format_gbp((float) $stats['charged_gbp'])); ?></div>
+			<div class="label"><?php esc_html_e('Spent this month', 'rfs-ai-seo'); ?></div>
 		</div>
 
 		<div class="rfs-ai-seo-stat-card">
@@ -154,7 +128,7 @@ if (!defined('ABSPATH')) {
 								<?php echo esc_html($log['model']); ?>
 							</span>
 						</td>
-						<td><?php echo esc_html($settings->format_cost($log['estimated_cost'], 4)); ?></td>
+						<td><?php echo esc_html($settings->format_gbp((float) $log['charged_gbp'])); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			<?php endif; ?>
