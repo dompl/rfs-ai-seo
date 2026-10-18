@@ -401,6 +401,8 @@ body.rfs-ai-seo-page {
 	min-width: 140px;
 	/* Override WordPress core .filter-group styles */
 	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
 	padding: 0 !important;
 	margin: 0 !important;
 	width: auto !important;
