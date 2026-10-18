@@ -150,7 +150,7 @@ final class RFS_AI_SEO {
 		// Table changes (adds charged_gbp on 1.x installs).
 		self::create_tables();
 
-		// Options that 2.0.0 no longer reads: credit ledger, Gemini, Stripe, currency, multipliers, cap.
+		// Options that 2.0.0 no longer reads: credit ledger, Gemini, Stripe, currency, cap and the other legacy pricing settings.
 		$patterns = ['rfs_ai_seo_credits_%', 'rfs_ai_seo_gemini_%', 'rfs_ai_seo_stripe_%'];
 		foreach ($patterns as $pattern) {
 			$names = $wpdb->get_col($wpdb->prepare("SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $pattern));

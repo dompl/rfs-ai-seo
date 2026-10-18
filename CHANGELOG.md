@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The in-plugin credit ledger (`Credits_Manager`) and its admin page.
 - Stripe top-up integration (`Stripe_Client` and the Stripe settings/test AJAX handler).
 - Gemini/Nano Banana image generation support.
-- The currency selector and cost multiplier/spending cap settings; all figures are now in pounds, charged by the gateway.
+- The currency selector and spending cap settings; all figures are now in pounds, charged by the gateway.
 - The `RFS_AI_SEO_OPEN_AI_KEY` and `RFS_AI_SEO_GEMINI_API_KEY` wp-config constants and the stored OpenAI API key option (API key encryption is no longer needed).
 
 ## [1.0.0] - 2026-06
