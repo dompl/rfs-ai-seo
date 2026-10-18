@@ -26,7 +26,8 @@ class Admin {
 	 */
 	public function __construct() {
 		// Register admin menu.
-		add_action('admin_menu', [$this, 'register_menu']);
+		add_action('admin_menu', [$this, 'register_menu'], 11);
+		add_filter('parent_file', [$this, 'parent_file'], 20);
 
 		// Add admin notices.
 		add_action('admin_notices', [$this, 'add_admin_notices']);
@@ -43,107 +44,92 @@ class Admin {
 	 *
 	 * @return void
 	 */
+	/** Admin pages: slug => [page title, menu label, render callback]. The first entry is the dashboard. */
+	public const PAGES = [
+		'rfs-ai'                        => ['AI SEO Dashboard', 'Dashboard', 'render_dashboard_page'],
+		'rfs-ai-settings'               => ['Settings - API & Configuration', 'Settings', 'render_settings_page'],
+		'rfs-ai-trainer'                => ['AI Trainer - Teach AI About Your Business', 'AI Trainer', 'render_trainer_page'],
+		'rfs-ai-seo-bulk'               => ['SEO Meta Generator - Titles & Descriptions', 'SEO Meta', 'render_seo_bulk_page'],
+		'rfs-ai-description-bulk'       => ['Description Generator - Full Product Descriptions', 'Descriptions', 'render_description_bulk_page'],
+		'rfs-ai-short-description-bulk' => ['Short Description Generator - Product Summaries', 'Short Descriptions', 'render_short_description_bulk_page'],
+		'rfs-ai-image-bulk'             => ['Image Generator - AI Product Images', 'Images', 'render_image_bulk_page'],
+		'rfs-ai-alt-text-bulk'          => ['Alt Text Generator - AI Image Alt Text', 'Alt Text', 'render_alt_text_bulk_page'],
+		'rfs-ai-stats'                  => ['Usage Statistics - Track Token Usage & Costs', 'Usage', 'render_stats_page'],
+	];
+
+	/** Parent menu slug of the shared "ATS AI" menu registered by ats-ai-portal. */
+	public const PORTAL_PARENT = 'ats-ai-credits';
+
+	/**
+	 * Whether the ats-ai-portal "ATS AI" parent menu exists (it registers at admin_menu priority 10, we run at 11).
+	 */
+	public static function portal_parent_exists(): bool {
+		return isset($GLOBALS['admin_page_hooks'][self::PORTAL_PARENT]);
+	}
+
+	/**
+	 * Register the admin menu.
+	 *
+	 * With ats-ai-portal active, AI SEO is a single entry under the shared "ATS AI" menu and its
+	 * tool pages are hidden pages (parent '') reached through the in-page sub-navigation.
+	 * Without it, the plugin keeps its own top-level menu with every page listed.
+	 */
 	public function register_menu(): void {
-		// Add top-level RFS AI menu.
-		add_menu_page(
-			__('AI SEO - AI-Powered Content Generation', 'rfs-ai-seo'),
-			__('AI SEO', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai',
-			[$this, 'render_dashboard_page'],
-			'dashicons-superhero',
-			58
-		);
+		$nested = self::portal_parent_exists();
+		$first  = true;
+		foreach (self::PAGES as $slug => [$title, $label, $callback]) {
+			if ($first && $nested) {
+				add_submenu_page(self::PORTAL_PARENT, __('AI SEO', 'rfs-ai-seo'), __('AI SEO', 'rfs-ai-seo'), 'manage_options', $slug, [$this, $callback]);
+			} elseif ($first) {
+				add_menu_page(__('AI SEO - AI-Powered Content Generation', 'rfs-ai-seo'), __('AI SEO', 'rfs-ai-seo'), 'manage_options', $slug, [$this, $callback], 'dashicons-superhero', 58);
+				add_submenu_page($slug, __($title, 'rfs-ai-seo'), __($label, 'rfs-ai-seo'), 'manage_options', $slug, [$this, $callback]);
+			} else {
+				add_submenu_page($nested ? '' : 'rfs-ai', __($title, 'rfs-ai-seo'), __($label, 'rfs-ai-seo'), 'manage_options', $slug, [$this, $callback]);
+			}
+			$first = false;
+		}
+	}
 
-		// Dashboard (Overview) - default page.
-		add_submenu_page(
-			'rfs-ai',
-			__('AI SEO Dashboard', 'rfs-ai-seo'),
-			__('Dashboard', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai',
-			[$this, 'render_dashboard_page']
-		);
+	/**
+	 * Keep the "ATS AI" menu open and "AI SEO" highlighted on the hidden tool pages.
+	 */
+	/**
+	 * Remove this plugin's pages from the hidden ('' parent) submenu list.
+	 *
+	 * wp-admin/menu-header.php calls get_admin_page_parent() right after the
+	 * `parent_file` filter; for a page registered under the hidden parent that
+	 * call resets $parent_file to '' and the ATS AI menu collapses. The hidden
+	 * entries are never rendered, so dropping them at this point is safe.
+	 */
+	private static function drop_hidden_entries(array $slugs): void {
+		if (empty($GLOBALS['submenu'][''])) {
+			return;
+		}
+		$GLOBALS['submenu'][''] = array_values(array_filter(
+			$GLOBALS['submenu'][''],
+			static fn($item) => !in_array((string) ($item[2] ?? ''), $slugs, true)
+		));
+	}
 
-		// Settings - API configuration.
-		add_submenu_page(
-			'rfs-ai',
-			__('Settings - API & Configuration', 'rfs-ai-seo'),
-			__('Settings', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-settings',
-			[$this, 'render_settings_page']
-		);
+	public function parent_file(string $parent): string {
+		$screen = function_exists('get_current_screen') ? get_current_screen() : null;
+		if ($screen && self::portal_parent_exists() && RFS_AI_SEO::is_plugin_screen((string) $screen->id)) {
+			$GLOBALS['submenu_file'] = 'rfs-ai';
+			self::drop_hidden_entries(array_keys(self::PAGES));
+			return self::PORTAL_PARENT;
+		}
+		return $parent;
+	}
 
-		// AI Trainer - Business context.
-		add_submenu_page(
-			'rfs-ai',
-			__('AI Trainer - Teach AI About Your Business', 'rfs-ai-seo'),
-			__('AI Trainer', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-trainer',
-			[$this, 'render_trainer_page']
-		);
-
-		// SEO Meta Generator.
-		add_submenu_page(
-			'rfs-ai',
-			__('SEO Meta Generator - Titles & Descriptions', 'rfs-ai-seo'),
-			__('SEO Meta Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-seo-bulk',
-			[$this, 'render_seo_bulk_page']
-		);
-
-		// Product Description Generator.
-		add_submenu_page(
-			'rfs-ai',
-			__('Description Generator - Full Product Descriptions', 'rfs-ai-seo'),
-			__('Description Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-description-bulk',
-			[$this, 'render_description_bulk_page']
-		);
-
-		// Short Description Generator.
-		add_submenu_page(
-			'rfs-ai',
-			__('Short Description Generator - Product Summaries', 'rfs-ai-seo'),
-			__('Short Description Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-short-description-bulk',
-			[$this, 'render_short_description_bulk_page']
-		);
-
-		// Image Generator.
-		add_submenu_page(
-			'rfs-ai',
-			__('Image Generator - AI Product Images', 'rfs-ai-seo'),
-			__('Image Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-image-bulk',
-			[$this, 'render_image_bulk_page']
-		);
-
-		// Alt Text Generator.
-		add_submenu_page(
-			'rfs-ai',
-			__('Alt Text Generator - AI Image Alt Text', 'rfs-ai-seo'),
-			__('Alt Text Generator', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-alt-text-bulk',
-			[$this, 'render_alt_text_bulk_page']
-		);
-
-		// Usage Statistics.
-		add_submenu_page(
-			'rfs-ai',
-			__('Usage Statistics - Track Token Usage & Costs', 'rfs-ai-seo'),
-			__('Usage Statistics', 'rfs-ai-seo'),
-			'manage_options',
-			'rfs-ai-stats',
-			[$this, 'render_stats_page']
-		);
+	/**
+	 * Header args for the shared ats-ai-portal header: name, active menu, sub-navigation tabs.
+	 */
+	public static function header_args(string $current): array {
+		$tabs = [];
+		foreach (self::PAGES as $slug => [$title, $label]) {
+			$tabs[$slug] = ['label' => __($label, 'rfs-ai-seo'), 'url' => admin_url('admin.php?page=' . $slug)];
+		}
+		return ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai', 'tabs' => $tabs, 'tab' => $current];
 	}
 
 	/**

@@ -21,7 +21,7 @@ $prompt_category        = $settings->get_prompt( 'category' );
 $image_prompts          = $settings->get_image_prompts();
 ?>
 
-<?php do_action('ats_ai_portal_header', ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai']); ?>
+<?php do_action('ats_ai_portal_header', \RFS_AI_SEO\Admin::header_args('rfs-ai-settings')); ?>
 <hr class="wp-header-end" style="display:none">
 <div class="ats-ai-wrap rfs-ai-seo-settings-page">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>

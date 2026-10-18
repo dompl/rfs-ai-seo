@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<?php do_action('ats_ai_portal_header', ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai']); ?>
+<?php do_action('ats_ai_portal_header', \RFS_AI_SEO\Admin::header_args('rfs-ai-seo-bulk')); ?>
 <hr class="wp-header-end" style="display:none">
 <div class="ats-ai-wrap rfs-ai-seo-bulk-generator">
 	<h1><?php esc_html_e('Bulk Generate SEO Meta Titles & Descriptions', 'rfs-ai-seo'); ?></h1>

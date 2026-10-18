@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 $business_context = get_option('rfs_ai_trainer_business_context', '');
 ?>
 
-<?php do_action('ats_ai_portal_header', ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai']); ?>
+<?php do_action('ats_ai_portal_header', \RFS_AI_SEO\Admin::header_args('rfs-ai-trainer')); ?>
 <hr class="wp-header-end" style="display:none">
 <div class="ats-ai-wrap rfs-ai-seo-trainer-page">
 	<h1><?php esc_html_e('AI Trainer', 'rfs-ai-seo'); ?></h1>

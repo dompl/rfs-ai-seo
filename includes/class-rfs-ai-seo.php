@@ -47,7 +47,7 @@ final class RFS_AI_SEO {
 	 * @return bool
 	 */
 	public static function is_plugin_screen(string $hook): bool {
-		if ($hook === 'toplevel_page_' . self::MENU_SLUG) {
+		if ($hook === 'toplevel_page_' . self::MENU_SLUG || str_ends_with($hook, '_page_' . self::MENU_SLUG)) {
 			return true;
 		}
 		foreach (self::SUBMENU_SLUGS as $slug) {
