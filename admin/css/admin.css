@@ -28,43 +28,29 @@
 	--rfs-transition: 0.2s ease;
 }
 
-/* ==========================================================================
-   Page Header (gradient banner)
-   ========================================================================== */
-
-.rfs-page-header {
-	background: linear-gradient(135deg, var(--rfs-primary) 0%, var(--rfs-primary-dark) 100%);
-	color: #fff;
-	padding: 24px;
-	border-radius: var(--rfs-radius);
-	margin: 20px 0;
-	box-shadow: var(--rfs-shadow);
-}
-
-.rfs-page-header h2 {
-	margin: 0 0 8px 0;
-	color: #fff;
-	font-size: 20px;
-	font-weight: 600;
-}
-
-.rfs-page-header p {
-	margin: 0 0 12px 0;
-	font-size: 14px;
-	line-height: 1.6;
-	opacity: 0.95;
-}
-
-.rfs-page-header-meta {
-	display: flex;
-	gap: 20px;
-	font-size: 12px;
-	opacity: 0.9;
-}
-
-.rfs-page-header-meta a {
-	color: #fff;
-	text-decoration: underline;
+/* Dark theme for the plugin's own screens (body class set in RFS_AI_SEO::admin_body_class).
+   Values mirror the shared ats-ai-portal palette so AI SEO, AI Credits and AI Brevo match.
+   Meta boxes on product/category screens keep the light :root tokens above. */
+body.rfs-ai-seo-page {
+	--rfs-primary: #e63529;
+	--rfs-primary-dark: #cc2b20;
+	--rfs-success: #22c55e;
+	--rfs-warning: #f59e0b;
+	--rfs-danger: #ef4444;
+	--rfs-text: #f3f3f1;
+	--rfs-text-muted: #a8a8a3;
+	--rfs-text-light: #6e6e6a;
+	--rfs-border: rgba(255, 255, 255, 0.07);
+	--rfs-border-light: rgba(255, 255, 255, 0.045);
+	--rfs-bg: #212121;
+	--rfs-bg-white: #191919;
+	--rfs-bg-input: #141414;
+	--rfs-bg-hover: #2a2a2a;
+	--rfs-radius: 10px;
+	--rfs-radius-sm: 6px;
+	--rfs-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	--rfs-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.55);
+	--rfs-transition: 0.16s ease;
 }
 
 /* ==========================================================================
@@ -1300,155 +1286,6 @@
 }
 
 /* ==========================================================================
-   Credits Page
-   ========================================================================== */
-
-/* Balance Card */
-.rfs-credits-balance {
-	background: var(--rfs-bg-white);
-	border: 1px solid var(--rfs-border);
-	border-radius: var(--rfs-radius);
-	padding: 30px;
-	margin: 20px 0;
-	box-shadow: var(--rfs-shadow);
-	text-align: center;
-}
-
-.rfs-credits-balance-label {
-	display: block;
-	font-size: 13px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-	color: var(--rfs-text-muted);
-	margin-bottom: 8px;
-}
-
-.rfs-credits-balance-amount {
-	display: block;
-	font-size: 48px;
-	font-weight: 700;
-	color: var(--rfs-text);
-	line-height: 1.1;
-}
-
-.rfs-credits-balance-amount.rfs-credits-low {
-	color: var(--rfs-danger);
-}
-
-.rfs-credits-balance-warning {
-	display: block;
-	margin-top: 10px;
-	font-size: 13px;
-	color: var(--rfs-danger);
-	font-weight: 600;
-}
-
-/* Package Cards Grid */
-.rfs-credits-packages {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-	gap: 20px;
-	margin: 20px 0 30px;
-}
-
-.rfs-credit-package {
-	background: var(--rfs-bg-white);
-	border: 1px solid var(--rfs-border);
-	border-radius: var(--rfs-radius);
-	padding: 25px;
-	text-align: center;
-	box-shadow: var(--rfs-shadow);
-	transition: box-shadow var(--rfs-transition), transform var(--rfs-transition), border-color var(--rfs-transition);
-	position: relative;
-}
-
-.rfs-credit-package:hover {
-	box-shadow: var(--rfs-shadow-hover);
-	transform: translateY(-2px);
-	border-color: var(--rfs-primary);
-}
-
-.rfs-credit-package h3 {
-	margin: 0 0 12px;
-	font-size: 16px;
-	font-weight: 600;
-	color: var(--rfs-text);
-}
-
-.rfs-credit-package-price {
-	font-size: 32px;
-	font-weight: 700;
-	color: var(--rfs-primary);
-	margin-bottom: 8px;
-}
-
-.rfs-credit-package-credits {
-	font-size: 14px;
-	color: var(--rfs-text-muted);
-	margin-bottom: 15px;
-}
-
-.rfs-credits-bonus-badge {
-	display: inline-block;
-	padding: 3px 10px;
-	border-radius: 12px;
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	background: #d4edda;
-	color: #155724;
-	margin-bottom: 15px;
-}
-
-.rfs-credits-buy-btn {
-	width: 100%;
-	margin-top: 5px;
-}
-
-/* Purchase History Table */
-.rfs-credits-history {
-	margin-top: 10px;
-}
-
-.rfs-credits-history code {
-	font-size: 11px;
-	color: var(--rfs-text-muted);
-}
-
-/* Dashboard Credits Bar */
-.rfs-dashboard-credits {
-	background: var(--rfs-bg-white);
-	border: 1px solid var(--rfs-border);
-	border-radius: var(--rfs-radius);
-	padding: 12px 20px;
-	margin: 20px 0 0;
-	box-shadow: var(--rfs-shadow);
-}
-
-.rfs-dashboard-credits-inner {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-}
-
-.rfs-dashboard-credits-label {
-	font-size: 13px;
-	font-weight: 600;
-	color: var(--rfs-text-muted);
-}
-
-.rfs-dashboard-credits-amount {
-	font-size: 18px;
-	font-weight: 700;
-	color: var(--rfs-text);
-}
-
-.rfs-dashboard-credits-amount.rfs-credits-low {
-	color: var(--rfs-danger);
-}
-
-/* ==========================================================================
    Alt Text Generator (Meta Box)
    ========================================================================== */
 
@@ -1573,3 +1410,289 @@
 }
 
 
+
+/* ==========================================================================
+   Shared-look components (replace former inline styles)
+   ========================================================================== */
+
+.rfs-ai-image-prompt-row {
+	background: var(--rfs-bg);
+	border: 1px solid var(--rfs-border);
+	border-radius: var(--rfs-radius-sm);
+	padding: 15px;
+	margin-bottom: 10px;
+	position: relative;
+}
+
+.rfs-ai-remove-image-prompt {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+}
+
+.rfs-btn-stop,
+body.rfs-ai-seo-page .button.rfs-btn-stop {
+	margin-left: auto;
+	color: var(--rfs-danger);
+	border-color: var(--rfs-danger);
+}
+
+body.rfs-ai-seo-page .button.rfs-btn-stop:hover,
+body.rfs-ai-seo-page .button.rfs-btn-stop:focus {
+	background: rgba(239, 68, 68, 0.12);
+	color: var(--rfs-danger);
+	border-color: var(--rfs-danger);
+}
+
+/* ==========================================================================
+   Dark theme: WP core elements on the plugin screens
+   (scoped to body.rfs-ai-seo-page; the page shell, header and .ats-ai-wrap
+   come from the shared ats-ai-portal stylesheet)
+   ========================================================================== */
+
+body.rfs-ai-seo-page .ats-ai-wrap > h1 { margin-bottom: 18px; }
+
+body.rfs-ai-seo-page .ats-ai-wrap h3,
+body.rfs-ai-seo-page .ats-ai-wrap h4,
+body.rfs-ai-seo-page label,
+body.rfs-ai-seo-page legend,
+body.rfs-ai-seo-page .form-table th,
+body.rfs-ai-seo-page .form-table td {
+	color: var(--rfs-text);
+}
+
+body.rfs-ai-seo-page .form-table th { font-weight: 600; }
+
+body.rfs-ai-seo-page .description,
+body.rfs-ai-seo-page .form-table td p.description {
+	color: var(--rfs-text-muted);
+}
+
+body.rfs-ai-seo-page .form-table p,
+body.rfs-ai-seo-page .rfs-ai-image-prompt-row p { margin: 0 0 12px; }
+body.rfs-ai-seo-page .form-table p.description { margin: 6px 0 0; }
+
+/* Inputs */
+body.rfs-ai-seo-page input[type="text"],
+body.rfs-ai-seo-page input[type="number"],
+body.rfs-ai-seo-page input[type="password"],
+body.rfs-ai-seo-page input[type="email"],
+body.rfs-ai-seo-page input[type="url"],
+body.rfs-ai-seo-page input[type="search"],
+body.rfs-ai-seo-page textarea,
+body.rfs-ai-seo-page select {
+	background-color: var(--rfs-bg-input);
+	color: var(--rfs-text);
+	border: 1px solid var(--rfs-border);
+	border-radius: var(--rfs-radius-sm);
+	box-shadow: none;
+}
+
+body.rfs-ai-seo-page select {
+	background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 6l5 5 5-5 2 1-7 7-7-7 2-1z' fill='%23a8a8a3'/%3E%3C/svg%3E");
+}
+
+body.rfs-ai-seo-page input[type="text"]:focus,
+body.rfs-ai-seo-page input[type="number"]:focus,
+body.rfs-ai-seo-page input[type="password"]:focus,
+body.rfs-ai-seo-page input[type="email"]:focus,
+body.rfs-ai-seo-page input[type="url"]:focus,
+body.rfs-ai-seo-page input[type="search"]:focus,
+body.rfs-ai-seo-page textarea:focus,
+body.rfs-ai-seo-page select:focus {
+	border-color: rgba(230, 53, 41, 0.6);
+	box-shadow: 0 0 0 1px rgba(230, 53, 41, 0.35);
+	outline: none;
+}
+
+body.rfs-ai-seo-page input::placeholder,
+body.rfs-ai-seo-page textarea::placeholder { color: var(--rfs-text-light); }
+
+body.rfs-ai-seo-page input[type="checkbox"],
+body.rfs-ai-seo-page input[type="radio"] {
+	background: var(--rfs-bg-input);
+	border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Buttons */
+body.rfs-ai-seo-page .button,
+body.rfs-ai-seo-page .button-secondary {
+	background: var(--rfs-bg);
+	color: var(--rfs-text);
+	border: 1px solid var(--rfs-border);
+	border-radius: var(--rfs-radius-sm);
+	box-shadow: none;
+	text-shadow: none;
+	transition: background var(--rfs-transition), border-color var(--rfs-transition);
+}
+
+body.rfs-ai-seo-page .button:hover,
+body.rfs-ai-seo-page .button:focus,
+body.rfs-ai-seo-page .button-secondary:hover,
+body.rfs-ai-seo-page .button-secondary:focus {
+	background: var(--rfs-bg-hover);
+	color: var(--rfs-text);
+	border-color: rgba(255, 255, 255, 0.14);
+	box-shadow: none;
+}
+
+body.rfs-ai-seo-page .button-primary {
+	background: var(--rfs-primary);
+	border-color: var(--rfs-primary);
+	color: #fff;
+}
+
+body.rfs-ai-seo-page .button-primary:hover,
+body.rfs-ai-seo-page .button-primary:focus {
+	background: var(--rfs-primary-dark);
+	border-color: var(--rfs-primary-dark);
+	color: #fff;
+}
+
+body.rfs-ai-seo-page .button[disabled],
+body.rfs-ai-seo-page .button:disabled,
+body.rfs-ai-seo-page .button.disabled,
+body.rfs-ai-seo-page .button-disabled {
+	background: var(--rfs-bg) !important;
+	border-color: var(--rfs-border) !important;
+	color: var(--rfs-text-light) !important;
+	box-shadow: none !important;
+}
+
+body.rfs-ai-seo-page .button-primary[disabled],
+body.rfs-ai-seo-page .button-primary:disabled,
+body.rfs-ai-seo-page .button-primary.disabled,
+body.rfs-ai-seo-page .button-primary.button-primary-disabled {
+	background: rgba(230, 53, 41, 0.35) !important;
+	border-color: transparent !important;
+	color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.rfs-ai-seo-page .button-link { color: var(--rfs-primary); }
+
+/* Settings tabs */
+body.rfs-ai-seo-page .nav-tab-wrapper {
+	border-bottom: 1px solid var(--rfs-border);
+	margin-bottom: 20px;
+}
+
+body.rfs-ai-seo-page .nav-tab {
+	background: var(--rfs-bg);
+	color: var(--rfs-text-muted);
+	border: 1px solid var(--rfs-border);
+	border-bottom: none;
+	border-radius: var(--rfs-radius-sm) var(--rfs-radius-sm) 0 0;
+	margin-left: 0;
+	margin-right: 4px;
+}
+
+body.rfs-ai-seo-page .nav-tab:hover,
+body.rfs-ai-seo-page .nav-tab:focus {
+	background: var(--rfs-bg-hover);
+	color: var(--rfs-text);
+}
+
+body.rfs-ai-seo-page .nav-tab-active,
+body.rfs-ai-seo-page .nav-tab-active:hover,
+body.rfs-ai-seo-page .nav-tab-active:focus,
+body.rfs-ai-seo-page .nav-tab-active:focus:active {
+	background: var(--rfs-bg-white);
+	color: var(--rfs-text);
+	border-color: var(--rfs-border);
+	border-bottom: 1px solid var(--rfs-bg-white);
+	margin-bottom: -1px;
+}
+
+/* Tables */
+body.rfs-ai-seo-page .wp-list-table,
+body.rfs-ai-seo-page .widefat {
+	background: var(--rfs-bg-white);
+	color: var(--rfs-text);
+	border: 1px solid var(--rfs-border);
+	border-radius: var(--rfs-radius);
+	box-shadow: none;
+	overflow: hidden;
+}
+
+body.rfs-ai-seo-page .widefat thead th,
+body.rfs-ai-seo-page .widefat thead td,
+body.rfs-ai-seo-page .widefat tfoot th,
+body.rfs-ai-seo-page .widefat tfoot td {
+	background: var(--rfs-bg);
+	color: var(--rfs-text-muted);
+	border-color: var(--rfs-border);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+body.rfs-ai-seo-page .widefat td,
+body.rfs-ai-seo-page .widefat th,
+body.rfs-ai-seo-page .widefat td p {
+	color: var(--rfs-text);
+	border-color: var(--rfs-border);
+}
+
+body.rfs-ai-seo-page .widefat .column-description,
+body.rfs-ai-seo-page .widefat td .row-actions { color: var(--rfs-text-muted); }
+
+body.rfs-ai-seo-page .striped > tbody > :nth-child(odd),
+body.rfs-ai-seo-page .alternate {
+	background: rgba(255, 255, 255, 0.02);
+}
+
+body.rfs-ai-seo-page .tablenav,
+body.rfs-ai-seo-page .tablenav .displaying-num,
+body.rfs-ai-seo-page .tablenav-pages,
+body.rfs-ai-seo-page .tablenav-pages .paging-input,
+body.rfs-ai-seo-page .tablenav .tablenav-paging-text {
+	color: var(--rfs-text-muted);
+}
+
+body.rfs-ai-seo-page .tablenav .tablenav-pages a,
+body.rfs-ai-seo-page .tablenav .tablenav-pages .tablenav-pages-navspan {
+	background: var(--rfs-bg);
+	border-color: var(--rfs-border);
+	color: var(--rfs-text);
+}
+
+body.rfs-ai-seo-page .tablenav .tablenav-pages .tablenav-pages-navspan.disabled {
+	color: var(--rfs-text-light);
+	background: var(--rfs-bg-white);
+}
+
+/* Misc core */
+body.rfs-ai-seo-page code,
+body.rfs-ai-seo-page kbd {
+	background: var(--rfs-bg);
+	color: var(--rfs-text);
+	border-radius: 4px;
+}
+
+body.rfs-ai-seo-page .notice-error { border-left-color: var(--rfs-danger); }
+body.rfs-ai-seo-page .notice-warning { border-left-color: var(--rfs-warning); }
+body.rfs-ai-seo-page .notice-success { border-left-color: var(--rfs-success); }
+body.rfs-ai-seo-page .notice-info { border-left-color: #c9a7bb; }
+
+/* Plugin components that used light-only literals */
+body.rfs-ai-seo-page .rfs-info-box,
+body.rfs-ai-seo-page .rfs-trainer-intro,
+body.rfs-ai-seo-page .rfs-comparison-tab { background: var(--rfs-bg); }
+
+body.rfs-ai-seo-page .rfs-row-processing { background-color: rgba(230, 53, 41, 0.08) !important; }
+
+body.rfs-ai-seo-page .rfs-model-gpt-4o { background: rgba(25, 118, 210, 0.18); color: #7cb8f0; }
+body.rfs-ai-seo-page .rfs-model-gpt-4o-mini { background: rgba(123, 31, 162, 0.22); color: #c88be0; }
+body.rfs-ai-seo-page .rfs-model-badge[class*="gemini-2"] { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+body.rfs-ai-seo-page .rfs-model-badge[class*="gemini-3"] { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+body.rfs-ai-seo-page .rfs-ai-seo-progress-stats .rfs-stat-success .rfs-stat-icon { background: rgba(34, 197, 94, 0.15); }
+body.rfs-ai-seo-page .rfs-ai-seo-progress-stats .rfs-stat-error .rfs-stat-icon { background: rgba(239, 68, 68, 0.15); }
+body.rfs-ai-seo-page .rfs-ai-seo-progress-stats .rfs-stat-info .rfs-stat-icon { background: rgba(201, 167, 187, 0.18); color: #c9a7bb; }
+body.rfs-ai-seo-page .rfs-ai-seo-progress-stats .rfs-stat-warning .rfs-stat-icon { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+body.rfs-ai-seo-page .rfs-status-has-images { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+body.rfs-ai-seo-page .rfs-status-no-images { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+body.rfs-ai-seo-page .rfs-alt-text-type-featured { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+body.rfs-ai-seo-page .rfs-alt-text-type-gallery { background: rgba(25, 118, 210, 0.18); color: #7cb8f0; }
+body.rfs-ai-seo-page .rfs-alt-text-type-variation { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }

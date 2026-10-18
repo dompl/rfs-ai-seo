@@ -19,9 +19,10 @@ $logger = new \RFS_AI_SEO\Usage_Logger();
 $stats = $logger->get_stats('month');
 ?>
 
-<div class="wrap rfs-ai-seo-dashboard">
-	<h1><?php esc_html_e('RFS AI', 'rfs-ai-seo'); ?></h1>
-	<?php do_action('ats_ai_portal_credits_bar'); ?>
+<?php do_action('ats_ai_portal_header', ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai']); ?>
+<hr class="wp-header-end" style="display:none">
+<div class="ats-ai-wrap rfs-ai-seo-dashboard">
+	<h1><?php esc_html_e('AI SEO', 'rfs-ai-seo'); ?></h1>
 
 	<?php if (!$has_api_key): ?>
 		<div class="notice notice-warning">

@@ -22,6 +22,42 @@ final class RFS_AI_SEO {
 	/** Stored plugin version, compared with RFS_AI_SEO_VERSION on load. */
 	public const VERSION_OPTION = 'rfs_ai_seo_version';
 
+	/** Menu slug of the top-level page. */
+	public const MENU_SLUG = 'rfs-ai';
+
+	/** Page slugs of the plugin's own submenu pages (the dark shared-look screens). */
+	public const SUBMENU_SLUGS = [
+		'rfs-ai-settings',
+		'rfs-ai-seo-bulk',
+		'rfs-ai-description-bulk',
+		'rfs-ai-short-description-bulk',
+		'rfs-ai-trainer',
+		'rfs-ai-image-bulk',
+		'rfs-ai-alt-text-bulk',
+		'rfs-ai-stats',
+	];
+
+	/**
+	 * Whether an admin screen id / enqueue hook belongs to one of the plugin's own pages.
+	 *
+	 * Submenu hooks are `{sanitised parent menu title}_page_{slug}`, so the parent part changes whenever the
+	 * menu label does ("RFS AI" became "AI SEO"); match on the slug suffix instead of the full hook.
+	 *
+	 * @param string $hook Screen id or admin_enqueue_scripts hook suffix.
+	 * @return bool
+	 */
+	public static function is_plugin_screen(string $hook): bool {
+		if ($hook === 'toplevel_page_' . self::MENU_SLUG) {
+			return true;
+		}
+		foreach (self::SUBMENU_SLUGS as $slug) {
+			if (str_ends_with($hook, '_page_' . $slug)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Plugin instance.
 	 *
@@ -92,6 +128,7 @@ final class RFS_AI_SEO {
 
 		// Enqueue admin assets.
 		add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
+		add_filter('admin_body_class', [$this, 'admin_body_class']);
 
 		// Add admin notices hook.
 		add_action('admin_notices', [$this, 'display_dependency_warnings']);
@@ -263,27 +300,30 @@ final class RFS_AI_SEO {
 	}
 
 	/**
+	 * Adds the shared-look body classes on the plugin's own screens only.
+	 *
+	 * `ats-ai-page` switches on the ats-ai-portal dark page shell; `rfs-ai-seo-page` scopes this plugin's dark tokens.
+	 *
+	 * @param string $classes Space-separated body classes.
+	 * @return string
+	 */
+	public function admin_body_class(string $classes): string {
+		$screen = function_exists('get_current_screen') ? get_current_screen() : null;
+		if ($screen && self::is_plugin_screen((string) $screen->id)) {
+			return trim($classes . ' ats-ai-page rfs-ai-seo-page');
+		}
+		return $classes;
+	}
+
+	/**
 	 * Enqueue admin scripts and styles.
 	 *
 	 * @param string $hook Current admin page hook.
 	 * @return void
 	 */
 	public function enqueue_admin_assets(string $hook): void {
-		// Plugin-specific pages.
-		$plugin_pages = [
-			'toplevel_page_rfs-ai',
-			'rfs-ai_page_rfs-ai-settings',
-			'rfs-ai_page_rfs-ai-seo-bulk',
-			'rfs-ai_page_rfs-ai-description-bulk',
-			'rfs-ai_page_rfs-ai-short-description-bulk',
-			'rfs-ai_page_rfs-ai-trainer',
-			'rfs-ai_page_rfs-ai-image-bulk',
-			'rfs-ai_page_rfs-ai-alt-text-bulk',
-			'rfs-ai_page_rfs-ai-stats',
-		];
-
 		// Check if we're on a plugin page.
-		$is_plugin_page = in_array($hook, $plugin_pages, true);
+		$is_plugin_page = self::is_plugin_screen($hook);
 
 		// Check if we're on a product edit screen.
 		$is_product_screen = false;
@@ -293,18 +333,18 @@ final class RFS_AI_SEO {
 		}
 
 		// Only load on our plugin pages and product/category edit screens.
-		$allowed_hooks = array_merge(
-			$plugin_pages,
-			['post.php', 'post-new.php', 'term.php', 'edit-tags.php']
-		);
-
-		if (!in_array($hook, $allowed_hooks, true)) {
+		if (!$is_plugin_page && !in_array($hook, ['post.php', 'post-new.php', 'term.php', 'edit-tags.php'], true)) {
 			return;
 		}
 
 		// Enqueue admin CSS.
 		$css_file = RFS_AI_SEO_PLUGIN_DIR . 'admin/css/admin.css';
 		$css_ver  = RFS_AI_SEO_VERSION . '.' . (file_exists($css_file) ? filemtime($css_file) : '0');
+		// Shared dark look (page shell + header) from ats-ai-portal; registered there at priority 5.
+		if ($is_plugin_page && wp_style_is('ats-ai-portal-admin', 'registered')) {
+			wp_enqueue_style('ats-ai-portal-admin');
+		}
+
 		wp_enqueue_style(
 			'rfs-ai-seo-admin',
 			RFS_AI_SEO_PLUGIN_URL . 'admin/css/admin.css',
@@ -381,7 +421,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue bulk generator JS on bulk page.
-		if ($hook === 'rfs-ai_page_rfs-ai-seo-bulk') {
+		if (str_ends_with($hook, '_page_rfs-ai-seo-bulk')) {
 			wp_enqueue_script(
 				'rfs-ai-seo-bulk',
 				RFS_AI_SEO_PLUGIN_URL . 'admin/js/bulk-generator.js',
@@ -408,7 +448,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue description bulk generator JS on description bulk page.
-		if ($hook === 'rfs-ai_page_rfs-ai-description-bulk') {
+		if (str_ends_with($hook, '_page_rfs-ai-description-bulk')) {
 			wp_enqueue_script(
 				'rfs-ai-description-bulk',
 				RFS_AI_SEO_PLUGIN_URL . 'admin/js/description-bulk.js',
@@ -434,7 +474,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue short description bulk generator JS on short description bulk page.
-		if ($hook === 'rfs-ai_page_rfs-ai-short-description-bulk') {
+		if (str_ends_with($hook, '_page_rfs-ai-short-description-bulk')) {
 			wp_enqueue_script(
 				'rfs-ai-short-description-bulk',
 				RFS_AI_SEO_PLUGIN_URL . 'admin/js/short-description-bulk.js',
@@ -460,7 +500,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue image bulk generator JS on image bulk page.
-		if ($hook === 'rfs-ai_page_rfs-ai-image-bulk') {
+		if (str_ends_with($hook, '_page_rfs-ai-image-bulk')) {
 			$img_bulk_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/image-bulk-generator.js';
 			wp_enqueue_script(
 				'rfs-ai-image-bulk',
@@ -488,7 +528,7 @@ final class RFS_AI_SEO {
 		}
 
 		// Enqueue alt text bulk generator JS on alt text bulk page.
-		if ($hook === 'rfs-ai_page_rfs-ai-alt-text-bulk') {
+		if (str_ends_with($hook, '_page_rfs-ai-alt-text-bulk')) {
 			$alt_bulk_js = RFS_AI_SEO_PLUGIN_DIR . 'admin/js/alt-text-bulk.js';
 			wp_enqueue_script(
 				'rfs-ai-alt-text-bulk',

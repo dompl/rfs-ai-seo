@@ -11,9 +11,10 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="wrap rfs-ai-seo-stats-page">
+<?php do_action('ats_ai_portal_header', ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai']); ?>
+<hr class="wp-header-end" style="display:none">
+<div class="ats-ai-wrap rfs-ai-seo-stats-page">
 	<h1><?php esc_html_e('Usage Statistics', 'rfs-ai-seo'); ?></h1>
-	<?php do_action('ats_ai_portal_credits_bar'); ?>
 
 	<?php
 	$settings = new \RFS_AI_SEO\Settings();

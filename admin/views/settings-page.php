@@ -21,32 +21,10 @@ $prompt_category        = $settings->get_prompt( 'category' );
 $image_prompts          = $settings->get_image_prompts();
 ?>
 
-<div class="wrap">
+<?php do_action('ats_ai_portal_header', ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai']); ?>
+<hr class="wp-header-end" style="display:none">
+<div class="ats-ai-wrap rfs-ai-seo-settings-page">
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-
-	<!-- Plugin Description -->
-	<div class="rfs-page-header">
-		<h2>
-			<?php esc_html_e( 'AI-Powered SEO Meta Generation', 'rfs-ai-seo' ); ?>
-		</h2>
-		<p>
-			<?php esc_html_e( 'Automatically generate compelling SEO meta titles and descriptions for your WooCommerce products and categories using OpenAI. Save time and improve your search engine rankings with AI-powered content optimization.', 'rfs-ai-seo' ); ?>
-		</p>
-		<div class="rfs-page-header-meta">
-			<div>
-				<strong><?php esc_html_e( 'Developed by:', 'rfs-ai-seo' ); ?></strong>
-				<a href="https://redfrogstudio.co.uk" target="_blank">Red Frog Studio</a>
-			</div>
-			<div>
-				<strong><?php esc_html_e( 'License:', 'rfs-ai-seo' ); ?></strong>
-				<?php esc_html_e( 'Proprietary - Licensed to Red Frog Studio', 'rfs-ai-seo' ); ?>
-			</div>
-			<div>
-				<strong><?php esc_html_e( 'Version:', 'rfs-ai-seo' ); ?></strong>
-				<?php echo esc_html( RFS_AI_SEO_VERSION ); ?>
-			</div>
-		</div>
-	</div>
 
 	<h2 class="nav-tab-wrapper">
 		<a href="?page=rfs-ai-settings&tab=api" class="nav-tab <?php echo $active_tab === 'api' ? 'nav-tab-active' : ''; ?>">
@@ -186,8 +164,8 @@ $image_prompts          = $settings->get_image_prompts();
 			<div id="rfs-ai-image-prompts-repeater">
 				<?php if ( !empty( $image_prompts ) ): ?>
 					<?php foreach ( $image_prompts as $index => $prompt ): ?>
-						<div class="rfs-ai-image-prompt-row" style="background: #f6f7f7; border: 1px solid #c3c4c7; border-radius: 4px; padding: 15px; margin-bottom: 10px; position: relative;">
-							<button type="button" class="button rfs-ai-remove-image-prompt" style="position: absolute; top: 10px; right: 10px;" title="<?php esc_attr_e( 'Remove', 'rfs-ai-seo' ); ?>">
+						<div class="rfs-ai-image-prompt-row">
+							<button type="button" class="button rfs-ai-remove-image-prompt" title="<?php esc_attr_e( 'Remove', 'rfs-ai-seo' ); ?>">
 								<span class="dashicons dashicons-trash" style="margin-top: 3px;"></span>
 							</button>
 							<p style="margin-top: 0;">
@@ -219,8 +197,8 @@ $image_prompts          = $settings->get_image_prompts();
 			<script>
 			jQuery(document).ready(function($) {
 				$('#rfs-ai-add-image-prompt').on('click', function() {
-					var html = '<div class="rfs-ai-image-prompt-row" style="background: #f6f7f7; border: 1px solid #c3c4c7; border-radius: 4px; padding: 15px; margin-bottom: 10px; position: relative;">' +
-						'<button type="button" class="button rfs-ai-remove-image-prompt" style="position: absolute; top: 10px; right: 10px;" title="<?php esc_attr_e( 'Remove', 'rfs-ai-seo' ); ?>">' +
+					var html = '<div class="rfs-ai-image-prompt-row">' +
+						'<button type="button" class="button rfs-ai-remove-image-prompt" title="<?php esc_attr_e( 'Remove', 'rfs-ai-seo' ); ?>">' +
 						'<span class="dashicons dashicons-trash" style="margin-top: 3px;"></span></button>' +
 						'<p style="margin-top: 0;"><label><strong><?php esc_html_e( 'Title', 'rfs-ai-seo' ); ?></strong></label><br>' +
 						'<input type="text" name="rfs_ai_seo_image_prompts_title[]" value="" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Product on white background', 'rfs-ai-seo' ); ?>" style="width: 100%;"></p>' +

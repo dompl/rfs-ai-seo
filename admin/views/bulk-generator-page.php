@@ -11,9 +11,10 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="wrap rfs-ai-seo-bulk-generator">
+<?php do_action('ats_ai_portal_header', ['name' => __('AI SEO', 'rfs-ai-seo'), 'active' => 'rfs-ai']); ?>
+<hr class="wp-header-end" style="display:none">
+<div class="ats-ai-wrap rfs-ai-seo-bulk-generator">
 	<h1><?php esc_html_e('Bulk Generate SEO Meta Titles & Descriptions', 'rfs-ai-seo'); ?></h1>
-	<?php do_action('ats_ai_portal_credits_bar'); ?>
 
 	<div class="rfs-info-box">
 		<p>
@@ -129,7 +130,7 @@ if (!defined('ABSPATH')) {
 		<div class="rfs-progress-header">
 			<div style="display: flex; align-items: center; gap: 12px;">
 				<span class="spinner is-active" style="float: none; margin: 0;"></span>
-				<h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #1d2327;">
+				<h2 style="margin: 0; font-size: 18px; font-weight: 600;">
 					<?php esc_html_e('Generating SEO Meta...', 'rfs-ai-seo'); ?>
 				</h2>
 			</div>

@@ -46,8 +46,8 @@ class Admin {
 	public function register_menu(): void {
 		// Add top-level RFS AI menu.
 		add_menu_page(
-			__('RFS AI - AI-Powered Content Generation', 'rfs-ai-seo'),
-			__('RFS AI', 'rfs-ai-seo'),
+			__('AI SEO - AI-Powered Content Generation', 'rfs-ai-seo'),
+			__('AI SEO', 'rfs-ai-seo'),
 			'manage_options',
 			'rfs-ai',
 			[$this, 'render_dashboard_page'],
@@ -58,7 +58,7 @@ class Admin {
 		// Dashboard (Overview) - default page.
 		add_submenu_page(
 			'rfs-ai',
-			__('RFS AI Dashboard', 'rfs-ai-seo'),
+			__('AI SEO Dashboard', 'rfs-ai-seo'),
 			__('Dashboard', 'rfs-ai-seo'),
 			'manage_options',
 			'rfs-ai',
@@ -188,7 +188,7 @@ class Admin {
 			include RFS_AI_SEO_PLUGIN_DIR . 'admin/views/dashboard-page.php';
 		} else {
 			echo '<div class="wrap">';
-			echo '<h1>' . esc_html__('RFS AI Dashboard', 'rfs-ai-seo') . '</h1>';
+			echo '<h1>' . esc_html__('AI SEO Dashboard', 'rfs-ai-seo') . '</h1>';
 			echo '<p>' . esc_html__('Dashboard functionality coming soon...', 'rfs-ai-seo') . '</p>';
 			echo '</div>';
 		}
